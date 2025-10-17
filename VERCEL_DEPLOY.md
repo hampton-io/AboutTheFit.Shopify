@@ -204,9 +204,12 @@ CREATE INDEX "ProductTryOnSettings_tryOnEnabled_idx" ON "ProductTryOnSettings"("
 ## Vercel-Specific Configuration
 
 The repository includes:
-- `vercel.json` - Deployment configuration
+- `react-router.config.ts` - Official Vercel preset for React Router v7
+- `vercel.json` - Framework specification
 - `.vercelignore` - Files to ignore during deployment
 - `postinstall` script in package.json - Generates Prisma client automatically
+
+This app uses the official Vercel React Router v7 integration announced in [Vercel's changelog](https://vercel.com/changelog/support-for-react-router-v7).
 
 ## Environment Variable Checklist
 
