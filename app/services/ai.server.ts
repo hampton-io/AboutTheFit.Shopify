@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 
 // Initialize Google Generative AI
 // Note: Set GOOGLE_AI_API_KEY in your .env file
@@ -32,6 +32,22 @@ export class VirtualTryOnAI {
     // Using gemini-2.5-flash-image for image generation
     this.model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash-image',
+      generationConfig: {
+        temperature: 0.3,    // Lower temperature for more consistent results
+        maxOutputTokens: 2000, // Increased for more detailed responses
+        topP: 0.8,           // Focus on most likely tokens
+        topK: 20,            // Limit vocabulary for consistency
+      },
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold: HarmBlockThreshold.BLOCK_NONE
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, 
+          threshold: HarmBlockThreshold.BLOCK_NONE
+        }
+      ]
     });
   }
 
@@ -48,27 +64,56 @@ export class VirtualTryOnAI {
       );
 
       const prompt = `
-You are a **photo compositing and virtual try-on specialist**. Your job is to edit the person from **Image 1** so they appear **wearing the clothing from Image 2** — while remaining unmistakably the *same individual* in every frame.
+You are a **professional virtual try-on specialist** with expertise in maintaining perfect identity consistency. Your task is to create a virtual try-on by placing the clothing from **Image 2** onto the person in **Image 1** while preserving their exact identity.
 
-### Identity Lock (Highest Priority)
-- Treat Image 1 as the **master photo** — do not recreate or approximate the person.
-- The face, skin tone, body shape, hairstyle, and proportions must be *identical pixel-by-pixel* across all outputs.
-- Do not alter facial geometry, lighting direction, or age.
-- Every generated view must clearly show the **exact same person** as in Image 1.
+### CRITICAL IDENTITY PRESERVATION RULES
+1. **FACIAL FEATURES MUST REMAIN IDENTICAL**: 
+   - Eye shape, color, and expression
+   - Nose structure and size
+   - Mouth shape and lip details
+   - Facial bone structure and jawline
+   - Eyebrow shape and thickness
+   - Skin texture, moles, freckles, and facial hair
 
-### Output Requirements
-- Create **four high-resolution edited photos** of this same person wearing the clothing from Image 2.
-- Each photo should vary only by **pose, camera angle, or body orientation**, *not by face or identity*.
-- Keep identical lighting and background across all four images for continuity.
-- Use the **exact clothing** from Image 2 — same color, texture, pattern, and material.
-- Clothing must fit naturally and respond to body movement realistically.
+2. **BODY CHARACTERISTICS MUST BE PRESERVED**:
+   - Body proportions and build
+   - Height and weight appearance
+   - Skin tone and texture
+   - Hair color, style, and texture
+   - Hand and finger proportions
 
-### Composition
-- Arrange the four edited photos in a 2×2 collage layout.
-- It must look like a **professional fashion shoot** featuring one model (the person from Image 1) showing the same outfit in different poses.
+3. **PHOTOGRAPHIC CONSISTENCY**:
+   - Maintain the same lighting conditions
+   - Keep the same background
+   - Preserve the same camera angle and perspective
+   - Maintain the same image quality and resolution
 
-### Reminder
-The model in all four photos is the **same person from Image 1**, not a variation or recreation.
+### ANALYSIS INSTRUCTIONS
+Before generating, carefully analyze Image 1 to identify:
+- Facial features: eye color, nose shape, mouth details, facial structure
+- Body characteristics: proportions, skin tone, hair details
+- Photographic elements: lighting, background, camera angle
+- Unique identifiers: moles, freckles, facial hair, distinctive features
+
+### TECHNICAL REQUIREMENTS
+- Create **four high-resolution images** in a 2×2 grid layout
+- Each image should show the same person in different poses/angles
+- Only vary pose, arm position, or slight body rotation
+- The clothing from Image 2 must fit naturally and realistically
+- Preserve all facial expressions and micro-details
+- Maintain consistent lighting and shadows
+
+### QUALITY STANDARDS
+- Professional fashion photography quality
+- Realistic fabric draping and movement
+- Natural-looking fit and proportions
+- Seamless integration of clothing onto the person
+- No artifacts, distortions, or unrealistic elements
+
+### OUTPUT FORMAT
+Return a single image containing a 2×2 grid showing the same person wearing the clothing from Image 2 in four different poses. The person must be unmistakably the same individual across all four images.
+
+Remember: This is NOT a recreation or approximation - it's the EXACT same person with different clothing. Every facial feature, body characteristic, and photographic element must remain identical to Image 1.
 `;
 
       const result = await this.model.generateContent([
@@ -92,15 +137,27 @@ The model in all four photos is the **same person from Image 1**, not a variatio
               // Check for inlineData
               if (part.inlineData && part.inlineData.data) {
                 console.log('✅ Image generated successfully');
+                
+                const resultImage = `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
+                
+                // Validate the generated image for likeness preservation
+                const validationResult = await this.validateGeneratedImage(request.userPhoto, resultImage);
+                
                 return {
                   success: true,
-                  resultImage: `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`,
+                  resultImage,
+                  analysisText: validationResult.message,
                 };
               }
 
               // Check for text response
               if (part.text) {
                 console.log('ℹ️  Text response received (no image)');
+                return {
+                  success: false,
+                  error: 'No image generated - received text response instead',
+                  analysisText: part.text,
+                };
               }
             }
           }
@@ -168,31 +225,73 @@ The model in all four photos is the **same person from Image 1**, not a variatio
 
   /**
    * Analyze clothing from an image (this works with Gemini)
+//    */
+//   async analyzeClothing(clothingImage: string): Promise<string> {
+//     try {
+//       const imageData = await this.convertImageToGenerativePart(clothingImage);
+
+//       const prompt = `
+// Analyze this clothing item and provide:
+// 1. Type of clothing (e.g., t-shirt, dress, jeans)
+// 2. Color(s)
+// 3. Pattern/texture
+// 4. Material (if identifiable)
+// 5. Style description
+// 6. Suitable occasions
+
+// Keep the response concise and well-formatted.
+// `;
+
+//       const result = await this.model.generateContent([prompt, imageData]);
+//       const response = await result.response;
+//       const text = response.text();
+
+//       return text;
+//     } catch (error) {
+//       console.error('Error analyzing clothing:', error);
+//       throw new Error('Failed to analyze clothing');
+//     }
+//   }
+
+
+  /**
+   * Validate generated image for likeness preservation
    */
-  async analyzeClothing(clothingImage: string): Promise<string> {
+  async validateGeneratedImage(originalPhoto: string, generatedImage: string): Promise<{
+    isValid: boolean;
+    message: string;
+  }> {
     try {
-      const imageData = await this.convertImageToGenerativePart(clothingImage);
+      const originalImageData = await this.convertImageToGenerativePart(originalPhoto);
+      const generatedImageData = await this.convertImageToGenerativePart(generatedImage);
 
       const prompt = `
-Analyze this clothing item and provide:
-1. Type of clothing (e.g., t-shirt, dress, jeans)
-2. Color(s)
-3. Pattern/texture
-4. Material (if identifiable)
-5. Style description
-6. Suitable occasions
+Compare these two images and evaluate if the generated image (Image 2) successfully preserves the identity of the person from the original image (Image 1).
 
-Keep the response concise and well-formatted.
+EVALUATION CRITERIA:
+1. **Facial Features**: Are the eyes, nose, mouth, and facial structure identical?
+2. **Identity Consistency**: Is it clearly the same person across all four poses in the grid?
+3. **Body Characteristics**: Are proportions, skin tone, and body type preserved?
+4. **Photographic Quality**: Is the lighting, background, and image quality consistent?
+
+Respond with: SUCCESS or FAILURE, followed by detailed analysis of what was preserved well and what needs improvement.
 `;
 
-      const result = await this.model.generateContent([prompt, imageData]);
+      const result = await this.model.generateContent([prompt, originalImageData, generatedImageData]);
       const response = await result.response;
       const text = response.text();
 
-      return text;
+      const isValid = text.toLowerCase().includes('success');
+      return {
+        isValid,
+        message: text,
+      };
     } catch (error) {
-      console.error('Error analyzing clothing:', error);
-      throw new Error('Failed to analyze clothing');
+      console.error('Error validating generated image:', error);
+      return {
+        isValid: true, // Default to valid if validation fails
+        message: 'Image validation failed - proceeding with generated result',
+      };
     }
   }
 

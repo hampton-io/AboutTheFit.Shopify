@@ -39,7 +39,7 @@
     height: 100%;
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(8px);
-    z-index: 9998;
+    z-index: 2147483646;
     animation: fadeIn 0.3s ease-out;
   "></div>
   
@@ -55,7 +55,7 @@
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
-    z-index: 9999;
+    z-index: 2147483647;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -141,7 +141,9 @@
         <div style="text-align: center; animation: fadeIn 0.3s ease-out;">
           <div style="position: relative; display: inline-block; margin-bottom: 20px;">
             <img 
-              id="preview-img-{{ block.id }}" 
+              id="preview-img-{{ block.id }}"
+              width="200"
+              height="200"
               style="
                 width: 200px;
                 height: 200px;
@@ -170,6 +172,7 @@
                 transition: all 0.2s;
                 font-weight: bold;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                z-index: 10;
               "
               onmouseover="this.style.transform='scale(1.1)';"
               onmouseout="this.style.transform='scale(1)';"
@@ -183,7 +186,7 @@
           ">Your photo is saved for quick try-ons</p>
           
           <button 
-            onclick="generateTryOn('{{ block.id }}', '{{ product.id }}', '{{ product.title | escape }}', '{{ product.featured_image | img_url: 'large' }}')"
+            onclick="generateTryOn('{{ block.id }}', '{{ product.id }}', '{{ product.title | escape }}', '{{ product.featured_image | image_url: width: 1024 }}')"
             id="generate-btn-{{ block.id }}"
             style="
               background: #000;
@@ -543,14 +546,32 @@
         // Stop loading messages
         stopLoadingMessages(blockId);
         
-        // Show header again
+        // Hide header for full image view
         const header = document.getElementById('modal-header-' + blockId);
-        header.style.display = 'flex';
+        header.style.display = 'none';
         
         // Expand modal for results
         const modalContent = document.getElementById('modal-content-' + blockId);
-        modalContent.style.maxWidth = '620px';
-        modalContent.style.padding = '32px 32px 24px';
+        const isMobile = window.innerWidth < 768;
+        
+        modalContent.style.padding = '0';
+        modalContent.style.overflow = 'hidden';
+        
+        if (isMobile) {
+          modalContent.style.maxWidth = 'none';
+          modalContent.style.width = '95vw';
+          modalContent.style.height = 'auto';
+          modalContent.style.maxHeight = '90vh';
+          modalContent.style.top = '50%';
+          modalContent.style.transform = 'translate(-50%, -50%)';
+        } else {
+          modalContent.style.maxWidth = 'none';
+          modalContent.style.width = 'auto';
+          modalContent.style.height = 'auto';
+          modalContent.style.maxHeight = '95vh';
+          modalContent.style.top = '50%';
+          modalContent.style.transform = 'translate(-50%, -50%)';
+        }
         
         // Show result with animation
         step2.style.animation = 'fadeOut 0.3s ease-out';
@@ -560,104 +581,147 @@
           const resultDiv = document.getElementById('result-' + blockId);
           
           resultDiv.innerHTML = `
-            <div style="animation: fadeIn 0.4s ease-out;">
-              <div style="
-                position: relative;
-                margin-bottom: 14px;
-                border-radius: 16px;
-                overflow: hidden;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-              ">
-                <img 
-                  src="${data.resultImage}" 
-                  style="
-                    width: 100%;
-                    max-height: 480px;
-                    object-fit: contain;
-                    display: block;
-                    background: #fafafa;
-                  "
-                />
-              </div>
+            <div style="display: flex; flex-direction: column; position: relative; height: 100%;">
+              <style>
+                .result-container-${blockId} {
+                  max-height: 85vh;
+                }
+                @media (min-width: 768px) {
+                  .result-container-${blockId} {
+                    flex-direction: row !important;
+                    height: auto !important;
+                    max-height: 90vh !important;
+                  }
+                  .image-container-${blockId} {
+                    flex: 1 !important;
+                    padding: 20px !important;
+                  }
+                  .buttons-container-${blockId} {
+                    width: 240px !important;
+                    position: static !important;
+                    padding: 20px !important;
+                    justify-content: center !important;
+                    border-top: none !important;
+                    border-left: 1px solid #e5e5e5 !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    gap: 16px !important;
+                  }
+                  .result-image-${blockId} {
+                    max-height: calc(90vh - 40px) !important;
+                    width: auto !important;
+                    max-width: 100% !important;
+                  }
+                }
+              </style>
               
-              <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                <button
-                  onclick="downloadImage('${data.resultImage}', '${blockId}')"
-                  style="
-                    flex: 1;
-                    background: white;
-                    color: #000;
-                    padding: 10px 14px;
-                    border: 2px solid #e5e5e5;
-                    border-radius: 8px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 6px;
-                  "
-                  onmouseover="this.style.borderColor='#000'; this.style.background='#fafafa';"
-                  onmouseout="this.style.borderColor='#e5e5e5'; this.style.background='white';"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="flex-shrink: 0;">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <polyline points="7 10 12 15 17 10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="12" y1="15" x2="12" y2="3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Save
-                </button>
-                <button
-                  onclick="shareImage('${data.resultImage}')"
-                  style="
-                    flex: 1;
-                    background: white;
-                    color: #000;
-                    padding: 10px 14px;
-                    border: 2px solid #e5e5e5;
-                    border-radius: 8px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 6px;
-                  "
-                  onmouseover="this.style.borderColor='#000'; this.style.background='#fafafa';"
-                  onmouseout="this.style.borderColor='#e5e5e5'; this.style.background='white';"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="flex-shrink: 0;">
-                    <circle cx="18" cy="5" r="3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="6" cy="12" r="3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="18" cy="19" r="3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Share
-                </button>
-              </div>
-              
-              <button
+              <!-- Close button -->
+              <button 
                 onclick="closeTryOnModal('${blockId}')"
                 style="
-                  background: #000;
-                  color: white;
-                  padding: 12px 24px;
+                  position: absolute;
+                  top: 20px;
+                  right: 20px;
+                  background: white;
                   border: none;
-                  border-radius: 8px;
-                  font-size: 14px;
-                  font-weight: 600;
+                  width: 36px;
+                  height: 36px;
+                  border-radius: 50%;
                   cursor: pointer;
-                  width: 100%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+                  z-index: 20;
                   transition: all 0.2s;
                 "
-                onmouseover="this.style.opacity='0.9'; this.style.transform='translateY(-1px)';"
-                onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)';"
-              >Try Another Item</button>
+                onmouseover="this.style.background='#f5f5f5';"
+                onmouseout="this.style.background='white';"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+              
+              <div class="result-container-${blockId}" style="display: flex; flex-direction: column;">
+                <!-- Image -->
+                <div class="image-container-${blockId}" style="background: #fafafa; display: flex; align-items: center; justify-content: center; flex: 1; overflow: hidden; min-height: 0; padding: 10px;">
+                  <img 
+                    class="result-image-${blockId}"
+                    src="${data.resultImage}" 
+                    style="
+                      max-width: 100%;
+                      max-height: 100%;
+                      width: 100%;
+                      height: 100%;
+                      object-fit: contain;
+                      display: block;
+                    "
+                  />
+                </div>
+                
+                <!-- Buttons -->
+                <div class="buttons-container-${blockId}" style="flex-shrink: 0; width: 100%; padding: 20px; display: flex; flex-direction: column; gap: 16px; background: white; border-top: 1px solid #e5e5e5; justify-content: center;">
+                  <button
+                    onclick="downloadImage('${data.resultImage}', '${blockId}')"
+                    style="
+                      background: #000;
+                      color: white;
+                      padding: 16px;
+                      border: none;
+                      border-radius: 10px;
+                      font-size: 15px;
+                      font-weight: 600;
+                      cursor: pointer;
+                      transition: all 0.2s;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      gap: 8px;
+                    "
+                    onmouseover="this.style.opacity='0.9';"
+                    onmouseout="this.style.opacity='1';"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Save Image
+                  </button>
+                  
+                  <button
+                    onclick="shareImage('${data.resultImage}')"
+                    style="
+                      background: white;
+                      color: #000;
+                      padding: 16px;
+                      border: 2px solid #e0e0e0;
+                      border-radius: 10px;
+                      font-size: 15px;
+                      font-weight: 600;
+                      cursor: pointer;
+                      transition: all 0.2s;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      gap: 8px;
+                    "
+                    onmouseover="this.style.borderColor='#000';"
+                    onmouseout="this.style.borderColor='#e0e0e0';"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="18" cy="5" r="3"/>
+                      <circle cx="6" cy="12" r="3"/>
+                      <circle cx="18" cy="19" r="3"/>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                    </svg>
+                    Share
+                  </button>
+                </div>
+              </div>
             </div>
           `;
           
