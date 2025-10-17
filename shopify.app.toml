@@ -28,8 +28,8 @@ api_version = "2025-10"
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 # read_products: Fetch product details and images for virtual try-on
-# write_payment_terms: Required for app billing and subscriptions
-scopes = "read_products,write_payment_terms"
+# Note: App billing (appSubscriptionCreate) doesn't require explicit scopes
+scopes = "read_products"
 
 [auth]
 redirect_urls = [ "https://example.com/api/auth" ]
