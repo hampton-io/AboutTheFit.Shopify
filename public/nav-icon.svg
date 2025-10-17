@@ -1,0 +1,11 @@
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <!-- ATF monogram -->
+  <g fill="currentColor">
+    <!-- A -->
+    <path d="M2 12 L2 10 L3 10 L3 6 L4 4 L5 6 L5 10 L6 10 L6 12 L5 12 L5 8 L3 8 L3 12 Z"/>
+    <!-- T -->
+    <path d="M7 4 L7 6 L8 6 L8 12 L9 12 L9 6 L10 6 L10 4 Z"/>
+    <!-- F -->
+    <path d="M11 4 L11 12 L12 12 L12 9 L14 9 L14 8 L12 8 L12 6 L14 6 L14 4 Z"/>
+  </g>
+</svg>

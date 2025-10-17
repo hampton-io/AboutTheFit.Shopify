@@ -1,0 +1,15 @@
+<svg width="1200" height="1200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Solid background instead of gradient for smaller file size -->
+  <rect width="1200" height="1200" fill="#5B21B6" rx="120"/>
+  
+  <!-- ATF Text -->
+  <text 
+    x="600" 
+    y="750" 
+    font-family="Arial, sans-serif" 
+    font-size="420" 
+    font-weight="900" 
+    fill="#FFFFFF" 
+    text-anchor="middle"
+    letter-spacing="-10">ATF</text>
+</svg>

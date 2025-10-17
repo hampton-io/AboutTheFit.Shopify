@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, Form, useLoaderData } from "react-router";
+import { redirect, Form, useLoaderData, Link } from "react-router";
 
 import { login } from "../../shopify.server";
 
@@ -191,6 +191,36 @@ export default function App() {
               </p>
             </Form>
           )}
+        </div>
+      </div>
+
+      <div className={styles.footer}>
+        <div className={styles.content}>
+          <div className={styles.footerContent}>
+            <div className={styles.footerBrand}>
+              <h3 className={styles.footerTitle}>About The Fit</h3>
+              <p className={styles.footerDescription}>
+                AI-powered virtual try-on technology that turns browsers into buyers.
+              </p>
+            </div>
+            <div className={styles.footerLinks}>
+              <div className={styles.footerSection}>
+                <h4 className={styles.footerSectionTitle}>Legal</h4>
+                <Link to="/privacy" className={styles.footerLink}>Privacy Policy</Link>
+                <Link to="/terms" className={styles.footerLink}>Terms of Service</Link>
+              </div>
+              <div className={styles.footerSection}>
+                <h4 className={styles.footerSectionTitle}>Support</h4>
+                <a href="mailto:support@aboutthefit.com" className={styles.footerLink}>Contact Support</a>
+                <a href="mailto:legal@aboutthefit.com" className={styles.footerLink}>Legal Inquiries</a>
+              </div>
+            </div>
+          </div>
+          <div className={styles.footerBottom}>
+            <p className={styles.footerCopyright}>
+              © {new Date().getFullYear()} About The Fit, Inc. All rights reserved.
+            </p>
+          </div>
         </div>
       </div>
     </div>
