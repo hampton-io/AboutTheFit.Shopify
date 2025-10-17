@@ -13,14 +13,14 @@ export const links: LinksFunction = () => [
 
 export default function TermsOfService() {
   return (
-    <div className={terms-container}>
-      <div className={terms-content}>
-        <div className={terms-header}>
-          <h1 className={terms-title}>Terms of Service</h1>
-          <p className={terms-last-updated}>Last updated: {new Date().toLocaleDateString()}</p>
+    <div className="terms-container">
+      <div className="terms-content">
+        <div className="terms-header">
+          <h1 className="terms-title">Terms of Service</h1>
+          <p className="terms-last-updated">Last updated: {new Date().toLocaleDateString()}</p>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">1. Acceptance of Terms</h2>
           <div className="terms-section-content">
             <p>
@@ -32,7 +32,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">2. Description of Service</h2>
           <div className="terms-section-content">
             <p>
@@ -48,7 +48,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">3. User Accounts and Eligibility</h2>
           <div className="terms-section-content">
             <h3>3.1 Account Requirements</h3>
@@ -68,7 +68,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">4. Subscription Plans and Billing</h2>
           <div className="terms-section-content">
             <h3>4.1 Available Plans</h3>
@@ -96,7 +96,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">5. Acceptable Use Policy</h2>
           <div className="terms-section-content">
             <h3>5.1 Permitted Uses</h3>
@@ -122,7 +122,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">6. Intellectual Property Rights</h2>
           <div className="terms-section-content">
             <h3>6.1 Our Intellectual Property</h3>
@@ -142,7 +142,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">7. Privacy and Data Protection</h2>
           <div className="terms-section-content">
             <p>
@@ -160,7 +160,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">8. Service Availability and Modifications</h2>
           <div className="terms-section-content">
             <h3>8.1 Service Availability</h3>
@@ -180,7 +180,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">9. Limitation of Liability</h2>
           <div className="terms-section-content">
             <p>
@@ -199,7 +199,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">10. Indemnification</h2>
           <div className="terms-section-content">
             <p>
@@ -214,7 +214,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">11. Termination</h2>
           <div className="terms-section-content">
             <h3>11.1 Termination by You</h3>
@@ -240,7 +240,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">12. Dispute Resolution</h2>
           <div className="terms-section-content">
             <h3>12.1 Governing Law</h3>
@@ -260,7 +260,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">13. General Provisions</h2>
           <div className="terms-section-content">
             <h3>13.1 Entire Agreement</h3>
@@ -285,7 +285,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">14. Changes to Terms</h2>
           <div className="terms-section-content">
             <p>
@@ -302,7 +302,7 @@ export default function TermsOfService() {
           </div>
         </div>
 
-        <div className={terms-section}>
+        <div className="terms-section">
           <h2 className="terms-section-title">15. Contact Information</h2>
           <div className="terms-section-content">
             <p>

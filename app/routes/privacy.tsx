@@ -47,7 +47,7 @@ export default function PrivacyPolicy() {
           </div>
         </div>
 
-        <div className={privacy-section}>
+        <div className="privacy-section">
           <h2 className="privacy-section-title">2. How We Use Your Information</h2>
           <div className="privacy-section-content">
             <p>We use the information we collect to:</p>
@@ -63,7 +63,7 @@ export default function PrivacyPolicy() {
           </div>
         </div>
 
-        <div className={privacy-section}>
+        <div className="privacy-section">
           <h2 className="privacy-section-title">3. Information Sharing and Disclosure</h2>
           <div className="privacy-section-content">
             <p>We do not sell, trade, or rent your personal information to third parties. We may share information only in the following circumstances:</p>
@@ -76,7 +76,7 @@ export default function PrivacyPolicy() {
           </div>
         </div>
 
-        <div className={privacy-section}>
+        <div className="privacy-section">
           <h2 className="privacy-section-title">4. Data Security</h2>
           <div className="privacy-section-content">
             <p>
@@ -92,7 +92,7 @@ export default function PrivacyPolicy() {
           </div>
         </div>
 
-        <div className={privacy-section}>
+        <div className="privacy-section">
           <h2 className="privacy-section-title">5. Data Retention</h2>
           <div className="privacy-section-content">
             <p>
@@ -107,7 +107,7 @@ export default function PrivacyPolicy() {
           </div>
         </div>
 
-        <div className={privacy-section}>
+        <div className="privacy-section">
           <h2 className="privacy-section-title">6. Your Rights and Choices</h2>
           <div className="privacy-section-content">
             <p>Depending on your location, you may have the following rights regarding your personal information:</p>
@@ -125,7 +125,7 @@ export default function PrivacyPolicy() {
           </div>
         </div>
 
-        <div className={privacy-section}>
+        <div className="privacy-section">
           <h2 className="privacy-section-title">7. Third-Party Services</h2>
           <div className="privacy-section-content">
             <p>
@@ -139,7 +139,7 @@ export default function PrivacyPolicy() {
           </div>
         </div>
 
-        <div className={privacy-section}>
+        <div className="privacy-section">
           <h2 className="privacy-section-title">8. International Data Transfers</h2>
           <div className="privacy-section-content">
             <p>
@@ -153,7 +153,7 @@ export default function PrivacyPolicy() {
           </div>
         </div>
 
-        <div className={privacy-section}>
+        <div className="privacy-section">
           <h2 className="privacy-section-title">9. Children's Privacy</h2>
           <div className="privacy-section-content">
             <p>
@@ -162,7 +162,7 @@ export default function PrivacyPolicy() {
           </div>
         </div>
 
-        <div className={privacy-section}>
+        <div className="privacy-section">
           <h2 className="privacy-section-title">10. Changes to This Policy</h2>
           <div className="privacy-section-content">
             <p>
@@ -179,7 +179,7 @@ export default function PrivacyPolicy() {
           </div>
         </div>
 
-        <div className={privacy-section}>
+        <div className="privacy-section">
           <h2 className="privacy-section-title">11. Contact Us</h2>
           <div className="privacy-section-content">
             <p>
