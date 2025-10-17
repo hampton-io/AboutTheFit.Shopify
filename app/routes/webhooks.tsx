@@ -40,6 +40,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   } catch (error) {
     console.error("Error processing compliance webhook:", error);
+    
+    // Check if it's an authentication/HMAC error
+    if (error instanceof Response) {
+      // authenticate.webhook() throws a Response for auth failures
+      // This includes invalid HMAC signatures (returns 401)
+      return error;
+    }
+    
+    // Other errors return 500
     return new Response(JSON.stringify({ 
       error: "Failed to process webhook" 
     }), {
