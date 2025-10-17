@@ -1,0 +1,15 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm install && npm run setup",
+  "framework": null,
+  "outputDirectory": "build/client",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "build/server/index.js": {
+      "maxDuration": 30
+    }
+  }
+}
+
