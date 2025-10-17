@@ -211,8 +211,7 @@ export default function App() {
               </div>
               <div className={styles.footerSection}>
                 <h4 className={styles.footerSectionTitle}>Support</h4>
-                <a href="mailto:support@aboutthefit.com" className={styles.footerLink}>Contact Support</a>
-                <a href="mailto:legal@aboutthefit.com" className={styles.footerLink}>Legal Inquiries</a>
+                <a href="mailto:support@hampton.io" className={styles.footerLink}>Contact Support</a>
               </div>
             </div>
           </div>

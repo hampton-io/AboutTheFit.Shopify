@@ -183,11 +183,7 @@ export default function PrivacyPolicy() {
               If you have any questions about this Privacy Policy or our data practices, please contact us:
             </p>
             <div className="privacy-contact-info">
-              <p><strong>Email:</strong> privacy@aboutthefit.com</p>
-              <p><strong>Address:</strong> About The Fit, Inc.</p>
-              <p>123 AI Innovation Drive</p>
-              <p>Tech City, TC 12345</p>
-              <p>United States</p>
+              <p><strong>Email:</strong> support@hampton.io</p>
             </div>
           </div>
         </div>
