@@ -184,6 +184,7 @@ export default function PrivacyPolicy() {
             </p>
             <div className="privacy-contact-info">
               <p><strong>Email:</strong> support@hampton.io</p>
+              <p><strong>Support Portal:</strong> <a href="https://www.revuapp.io/submit/cmguzyiw40001l1046f965l8a" target="_blank" rel="noopener noreferrer">Submit a Request</a></p>
             </div>
           </div>
         </div>

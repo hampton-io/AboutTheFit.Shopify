@@ -211,7 +211,8 @@ export default function App() {
               </div>
               <div className={styles.footerSection}>
                 <h4 className={styles.footerSectionTitle}>Support</h4>
-                <a href="mailto:support@hampton.io" className={styles.footerLink}>Contact Support</a>
+                <a href="https://www.revuapp.io/submit/cmguzyiw40001l1046f965l8a" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>Submit a Request</a>
+                <a href="mailto:support@hampton.io" className={styles.footerLink}>Email Support</a>
               </div>
             </div>
           </div>
