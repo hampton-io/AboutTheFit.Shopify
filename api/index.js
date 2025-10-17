@@ -1,5 +1,6 @@
 // Vercel serverless function entry point
-import { createRequestHandler } from "@react-router/node";
+import pkg from "@react-router/node";
+const { createRequestHandler } = pkg;
 import * as build from "../build/server/index.js";
 
 export default createRequestHandler({ build });
