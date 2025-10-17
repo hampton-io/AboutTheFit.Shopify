@@ -1,0 +1,784 @@
+{% comment %}
+  About the Fit - Try-On Button Block
+  This adds a "Try It On" button to product pages
+{% endcomment %}
+
+<div class="try-on-button-wrapper" data-product-id="{{ product.id }}" id="try-on-wrapper-{{ block.id }}" style="display: none;">
+  <button 
+    type="button" 
+    class="try-on-button"
+    id="try-on-btn-{{ block.id }}"
+    style="
+      background: {{ block.settings.button_color }};
+      color: {{ block.settings.button_text_color }};
+      padding: 16px 24px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 12px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    "
+    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.15)';"
+    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.1)';"
+  >
+    {{ block.settings.button_text }}
+  </button>
+</div>
+
+<!-- Try-On Modal -->
+<div id="try-on-modal-{{ block.id }}" class="try-on-modal" style="display: none;">
+  <div class="try-on-modal-overlay" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 9998;
+    animation: fadeIn 0.3s ease-out;
+  "></div>
+  
+  <div class="try-on-modal-content" id="modal-content-{{ block.id }}" style="
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 32px;
+    border-radius: 20px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 9999;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  ">
+    <div class="modal-header" id="modal-header-{{ block.id }}" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; transition: opacity 0.3s ease, margin 0.3s ease;">
+      <h2 style="
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #000;
+      ">About the Fit</h2>
+      <button 
+        class="modal-close" 
+        onclick="closeTryOnModal('{{ block.id }}')"
+        style="
+          background: #f5f5f5;
+          border: none;
+          font-size: 20px;
+          cursor: pointer;
+          padding: 0;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          transition: all 0.2s;
+          color: #666;
+        "
+        onmouseover="this.style.background='#e5e5e5';"
+        onmouseout="this.style.background='#f5f5f5';"
+      >×</button>
+    </div>
+    
+    <!-- Step 1: Upload Photo -->
+    <div id="modal-step-1-{{ block.id }}" class="modal-step" style="animation: fadeIn 0.3s ease-out;">
+      
+      <!-- Upload Zone (hidden when photo uploaded) -->
+      <div id="upload-zone-container-{{ block.id }}">
+        <p style="
+          margin-bottom: 24px;
+          color: #666;
+          font-size: 15px;
+          text-align: center;
+        ">Upload a photo to see how this looks on you</p>
+        
+        <div 
+          id="drop-zone-{{ block.id }}"
+          style="
+            border: 2px dashed #ddd;
+            border-radius: 16px;
+            padding: 60px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+          "
+          ondragover="event.preventDefault(); this.style.borderColor='{{ block.settings.button_color }}'; this.style.background='#f5f5f5';"
+          ondragleave="this.style.borderColor='#ddd'; this.style.background='#fafafa';"
+          ondrop="handleDrop(event, '{{ block.id }}');"
+          onclick="document.getElementById('photo-input-{{ block.id }}').click();"
+        >
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#bbb" style="margin: 0 auto 16px;">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="17 8 12 3 7 8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="12" y1="3" x2="12" y2="15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p style="margin: 0 0 8px; font-weight: 600; font-size: 15px; color: #333;">Click or drag to upload</p>
+          <p style="margin: 0; font-size: 13px; color: #999;">JPG, PNG or WebP (max 10MB)</p>
+        </div>
+      </div>
+      
+      <input 
+        type="file" 
+        id="photo-input-{{ block.id }}" 
+        accept="image/jpeg,image/png,image/webp"
+        style="display: none;"
+        onchange="handleFileSelect(event, '{{ block.id }}');"
+      >
+      
+      <!-- Preview (shown when photo uploaded) -->
+      <div id="preview-{{ block.id }}" style="display: none;">
+        <div style="text-align: center; animation: fadeIn 0.3s ease-out;">
+          <div style="position: relative; display: inline-block; margin-bottom: 20px;">
+            <img 
+              id="preview-img-{{ block.id }}" 
+              style="
+                width: 200px;
+                height: 200px;
+                object-fit: cover;
+                border-radius: 16px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+              "
+            />
+            <button
+              onclick="event.stopPropagation(); resetUpload('{{ block.id }}');"
+              style="
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                background: #000;
+                color: white;
+                border: 3px solid white;
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                cursor: pointer;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+                font-weight: bold;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+              "
+              onmouseover="this.style.transform='scale(1.1)';"
+              onmouseout="this.style.transform='scale(1)';"
+            >×</button>
+          </div>
+          
+          <p style="
+            font-size: 13px;
+            color: #999;
+            margin: 0 0 16px;
+          ">Your photo is saved for quick try-ons</p>
+          
+          <button 
+            onclick="generateTryOn('{{ block.id }}', '{{ product.id }}', '{{ product.title | escape }}', '{{ product.featured_image | img_url: 'large' }}')"
+            id="generate-btn-{{ block.id }}"
+            style="
+              background: #000;
+              color: white;
+              padding: 16px 40px;
+              border: none;
+              border-radius: 12px;
+              font-size: 15px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s;
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+              display: block;
+              width: 100%;
+              max-width: 300px;
+              margin: 0 auto;
+            "
+            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.25)';"
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.15)';"
+          >
+            Generate Try-On ✨
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Step 2: Loading -->
+    <div id="modal-step-2-{{ block.id }}" class="modal-step" style="display: none; padding: 56px 32px;">
+      <div style="text-align: center;">
+        <!-- Minimal Spinner -->
+        <div style="
+          position: relative;
+          width: 40px;
+          height: 40px;
+          margin: 0 auto 32px;
+        ">
+          <div style="
+            width: 100%;
+            height: 100%;
+            border: 2px solid #f0f0f0;
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+          "></div>
+        </div>
+        
+        <!-- Status Text -->
+        <div style="
+          font-size: 15px;
+          font-weight: 500;
+          color: #000;
+          margin-bottom: 10px;
+          letter-spacing: 0.3px;
+          transition: opacity 0.3s ease;
+        " id="loading-text-{{ block.id }}">Creating your try-on</div>
+        
+        <!-- Subtle Progress -->
+        <div style="
+          width: 240px;
+          height: 1px;
+          background: #f0f0f0;
+          position: relative;
+          overflow: hidden;
+          margin: 0 auto 12px;
+        ">
+          <div style="
+            position: absolute;
+            height: 100%;
+            width: 40%;
+            background: #000;
+            animation: progress 1.5s ease-in-out infinite;
+          "></div>
+        </div>
+        
+        <div style="
+          font-size: 12px;
+          color: #999;
+          font-weight: 400;
+        ">20-30 seconds</div>
+      </div>
+    </div>
+    
+    <!-- Step 3: Result -->
+    <div id="modal-step-3-{{ block.id }}" class="modal-step" style="display: none;">
+      <div id="result-{{ block.id }}"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -45%);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+  }
+  
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  
+  @keyframes pulse {
+    0%, 100% { 
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.6;
+      transform: scale(0.8);
+    }
+  }
+  
+  @keyframes progress {
+    0% { 
+      left: -40%;
+    }
+    100% { 
+      left: 100%;
+    }
+  }
+  
+  /* Smooth scrollbar */
+  .try-on-modal-content::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .try-on-modal-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .try-on-modal-content::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 3px;
+  }
+  
+  .try-on-modal-content::-webkit-scrollbar-thumb:hover {
+    background: #ccc;
+  }
+</style>
+
+<script>
+  // Check if try-on is enabled for this product
+  window.addEventListener('DOMContentLoaded', async function() {
+    const productId = '{{ product.id }}';
+    const shop = '{{ shop.permanent_domain }}';
+    
+    console.log('🔍 Checking try-on status for product:', productId);
+    console.log('🏪 Shop:', shop);
+    
+    try {
+      const url = `/apps/aboutthefit/check-enabled?productId=${encodeURIComponent(productId)}&shop=${encodeURIComponent(shop)}`;
+      console.log('📞 Calling:', url);
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      console.log('📦 Response:', data);
+      
+      if (data.enabled) {
+        // Show the button if enabled
+        console.log('✅ Try-on enabled - showing button');
+        document.getElementById('try-on-wrapper-{{ block.id }}').style.display = 'block';
+      } else {
+        console.log('❌ Try-on not enabled for this product');
+      }
+    } catch (error) {
+      console.error('Failed to check try-on status:', error);
+    }
+    
+    // Load saved photo from localStorage
+    const savedPhoto = localStorage.getItem('aboutTheFit_userPhoto');
+    if (savedPhoto) {
+      window['tryOnPhoto_{{ block.id }}'] = savedPhoto;
+    }
+  });
+
+  // Open modal with animation
+  document.getElementById('try-on-btn-{{ block.id }}').addEventListener('click', function() {
+    const modal = document.getElementById('try-on-modal-{{ block.id }}');
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    // Check if we have a saved photo
+    const savedPhoto = localStorage.getItem('aboutTheFit_userPhoto');
+    if (savedPhoto) {
+      // Auto-load the saved photo
+      const img = document.getElementById('preview-img-{{ block.id }}');
+      img.src = savedPhoto;
+      document.getElementById('upload-zone-container-{{ block.id }}').style.display = 'none';
+      document.getElementById('preview-{{ block.id }}').style.display = 'block';
+      window['tryOnPhoto_{{ block.id }}'] = savedPhoto;
+    }
+  });
+  
+  // Close modal
+  function closeTryOnModal(blockId) {
+    const modal = document.getElementById('try-on-modal-' + blockId);
+    modal.style.animation = 'fadeOut 0.3s ease-out';
+    setTimeout(() => {
+      modal.style.display = 'none';
+      modal.style.animation = '';
+      document.body.style.overflow = '';
+      
+      // Reset modal size and header
+      const modalContent = document.getElementById('modal-content-' + blockId);
+      modalContent.style.maxWidth = '500px';
+      modalContent.style.padding = '32px';
+      
+      const header = document.getElementById('modal-header-' + blockId);
+      header.style.display = 'flex';
+      
+      // Reset modal state
+      document.getElementById('modal-step-1-' + blockId).style.display = 'block';
+      document.getElementById('modal-step-2-' + blockId).style.display = 'none';
+      document.getElementById('modal-step-3-' + blockId).style.display = 'none';
+      document.getElementById('preview-' + blockId).style.display = 'none';
+      document.getElementById('upload-zone-container-' + blockId).style.display = 'block';
+      window['tryOnPhoto_' + blockId] = null;
+    }, 300);
+  }
+  
+  // Close on overlay click
+  document.querySelector('#try-on-modal-{{ block.id }} .try-on-modal-overlay')?.addEventListener('click', function() {
+    closeTryOnModal('{{ block.id }}');
+  });
+  
+  // Handle file drop
+  function handleDrop(event, blockId) {
+    event.preventDefault();
+    const dropZone = event.currentTarget;
+    dropZone.style.borderColor = '#d0d0d0';
+    dropZone.style.background = 'linear-gradient(145deg, #fafafa 0%, #f0f0f0 100%)';
+    
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+      handleFile(files[0], blockId);
+    }
+  }
+  
+  // Handle file select
+  function handleFileSelect(event, blockId) {
+    const files = event.target.files;
+    if (files.length > 0) {
+      handleFile(files[0], blockId);
+    }
+  }
+  
+  // Process uploaded file
+  function handleFile(file, blockId) {
+    // Validate file
+    if (!file.type.match('image.*')) {
+      showNotification('Please upload an image file', 'error');
+      return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {
+      showNotification('File too large. Maximum size is 10MB', 'error');
+      return;
+    }
+    
+    // Show preview with animation
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const photoData = e.target.result;
+      const img = document.getElementById('preview-img-' + blockId);
+      img.src = photoData;
+      
+      // Hide upload zone, show preview
+      document.getElementById('upload-zone-container-' + blockId).style.display = 'none';
+      document.getElementById('preview-' + blockId).style.display = 'block';
+      
+      // Store in memory and localStorage
+      window['tryOnPhoto_' + blockId] = photoData;
+      localStorage.setItem('aboutTheFit_userPhoto', photoData);
+    };
+    reader.readAsDataURL(file);
+  }
+  
+  // Reset upload (go back to upload state)
+  function resetUpload(blockId) {
+    document.getElementById('preview-' + blockId).style.display = 'none';
+    document.getElementById('upload-zone-container-' + blockId).style.display = 'block';
+    window['tryOnPhoto_' + blockId] = null;
+    localStorage.removeItem('aboutTheFit_userPhoto');
+  }
+  
+  // Generate try-on
+  async function generateTryOn(blockId, productId, productTitle, productImage) {
+    const photoData = window['tryOnPhoto_' + blockId];
+    
+    if (!photoData) {
+      showNotification('Please upload a photo first', 'error');
+      return;
+    }
+    
+    // Show loading state with transition
+    const step1 = document.getElementById('modal-step-1-' + blockId);
+    const step2 = document.getElementById('modal-step-2-' + blockId);
+    
+    step1.style.animation = 'fadeOut 0.3s ease-out';
+    
+    // Hide header during loading
+    const header = document.getElementById('modal-header-' + blockId);
+    header.style.display = 'none';
+    
+    setTimeout(() => {
+      step1.style.display = 'none';
+      step2.style.display = 'block';
+      step2.style.animation = 'fadeIn 0.3s ease-out';
+      
+      // Compact modal for loading
+      const modalContent = document.getElementById('modal-content-' + blockId);
+      modalContent.style.maxWidth = '380px';
+      modalContent.style.padding = '0';
+      
+      // Start animated loading messages
+      startLoadingMessages(blockId);
+    }, 300);
+    
+    try {
+      // Use App Proxy
+      const API_URL = '/apps/aboutthefit/tryon/create';
+      console.log('🎨 Calling try-on API...');
+      
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: productId,
+          productTitle: productTitle,
+          productImage: productImage,
+          userPhoto: photoData,
+        }),
+      });
+      
+      const data = await response.json();
+      console.log('📦 Response:', data.success ? 'Success!' : 'Failed');
+      
+      if (data.success && data.resultImage) {
+        // Stop loading messages
+        stopLoadingMessages(blockId);
+        
+        // Show header again
+        const header = document.getElementById('modal-header-' + blockId);
+        header.style.display = 'flex';
+        
+        // Expand modal for results
+        const modalContent = document.getElementById('modal-content-' + blockId);
+        modalContent.style.maxWidth = '620px';
+        modalContent.style.padding = '32px 32px 24px';
+        
+        // Show result with animation
+        step2.style.animation = 'fadeOut 0.3s ease-out';
+        setTimeout(() => {
+          step2.style.display = 'none';
+          const step3 = document.getElementById('modal-step-3-' + blockId);
+          const resultDiv = document.getElementById('result-' + blockId);
+          
+          resultDiv.innerHTML = `
+            <div style="animation: fadeIn 0.4s ease-out;">
+              <div style="
+                position: relative;
+                margin-bottom: 14px;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+              ">
+                <img 
+                  src="${data.resultImage}" 
+                  style="
+                    width: 100%;
+                    max-height: 480px;
+                    object-fit: contain;
+                    display: block;
+                    background: #fafafa;
+                  "
+                />
+              </div>
+              
+              <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <button
+                  onclick="downloadImage('${data.resultImage}', '${blockId}')"
+                  style="
+                    flex: 1;
+                    background: white;
+                    color: #000;
+                    padding: 10px 14px;
+                    border: 2px solid #e5e5e5;
+                    border-radius: 8px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 6px;
+                  "
+                  onmouseover="this.style.borderColor='#000'; this.style.background='#fafafa';"
+                  onmouseout="this.style.borderColor='#e5e5e5'; this.style.background='white';"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="flex-shrink: 0;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="7 10 12 15 17 10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="12" y1="15" x2="12" y2="3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Save
+                </button>
+                <button
+                  onclick="shareImage('${data.resultImage}')"
+                  style="
+                    flex: 1;
+                    background: white;
+                    color: #000;
+                    padding: 10px 14px;
+                    border: 2px solid #e5e5e5;
+                    border-radius: 8px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 6px;
+                  "
+                  onmouseover="this.style.borderColor='#000'; this.style.background='#fafafa';"
+                  onmouseout="this.style.borderColor='#e5e5e5'; this.style.background='white';"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="flex-shrink: 0;">
+                    <circle cx="18" cy="5" r="3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="6" cy="12" r="3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="18" cy="19" r="3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Share
+                </button>
+              </div>
+              
+              <button
+                onclick="closeTryOnModal('${blockId}')"
+                style="
+                  background: #000;
+                  color: white;
+                  padding: 12px 24px;
+                  border: none;
+                  border-radius: 8px;
+                  font-size: 14px;
+                  font-weight: 600;
+                  cursor: pointer;
+                  width: 100%;
+                  transition: all 0.2s;
+                "
+                onmouseover="this.style.opacity='0.9'; this.style.transform='translateY(-1px)';"
+                onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)';"
+              >Try Another Item</button>
+            </div>
+          `;
+          
+          step3.style.display = 'block';
+          step3.style.animation = 'fadeIn 0.3s ease-out';
+        }, 300);
+      } else {
+        throw new Error(data.error || 'Failed to generate try-on');
+      }
+    } catch (error) {
+      console.error('❌ Error:', error);
+      stopLoadingMessages(blockId);
+      showNotification('Something went wrong. Please try again.', 'error');
+      closeTryOnModal(blockId);
+    }
+  }
+  
+  // Animated loading messages
+  function startLoadingMessages(blockId) {
+    const messages = [
+      'Analyzing photo',
+      'Understanding fit',
+      'Creating try-on',
+      'Generating poses',
+      'Finalizing'
+    ];
+    
+    let currentIndex = 0;
+    const textElement = document.getElementById('loading-text-' + blockId);
+    
+    if (!textElement) return;
+    
+    // Store interval ID so we can clear it later
+    window['loadingInterval_' + blockId] = setInterval(() => {
+      currentIndex = (currentIndex + 1) % messages.length;
+      textElement.style.opacity = '0.3';
+      setTimeout(() => {
+        textElement.textContent = messages[currentIndex];
+        textElement.style.opacity = '1';
+      }, 150);
+    }, 2500);
+  }
+  
+  // Clear loading messages
+  function stopLoadingMessages(blockId) {
+    if (window['loadingInterval_' + blockId]) {
+      clearInterval(window['loadingInterval_' + blockId]);
+      delete window['loadingInterval_' + blockId];
+    }
+  }
+  
+  // Show notification (simple version)
+  function showNotification(message, type) {
+    alert(message);
+  }
+  
+  // Download image
+  function downloadImage(dataUrl, blockId) {
+    try {
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = 'about-the-fit-tryon-' + Date.now() + '.jpg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Download failed. Please try right-clicking the image and saving manually.');
+    }
+  }
+  
+  // Share image
+  async function shareImage(dataUrl) {
+    try {
+      // Convert base64 to blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], 'about-the-fit-tryon.jpg', { type: 'image/jpeg' });
+      
+      // Check if Web Share API is supported
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: 'About the Fit - Virtual Try-On',
+          text: 'Check out how this looks on me!',
+          files: [file]
+        });
+      } else {
+        // Fallback: copy to clipboard or show message
+        alert('Sharing is not supported on this device. Use the Save button to download the image.');
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Share failed:', error);
+      }
+    }
+  }
+</script>
+
+{% schema %}
+{
+  "name": "About the Fit",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button Text",
+      "default": "Try It On"
+    },
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Button Color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Button Text Color",
+      "default": "#FFFFFF"
+    }
+  ]
+}
+{% endschema %}
