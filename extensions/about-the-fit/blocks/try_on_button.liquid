@@ -3,7 +3,7 @@
   This adds a "Try It On" button to product pages
 {% endcomment %}
 
-<div class="try-on-button-wrapper" data-product-id="{{ product.id }}" id="try-on-wrapper-{{ block.id }}" style="display: none;">
+<div class="try-on-button-wrapper" data-product-id="{{ product.id }}" id="try-on-wrapper-{{ block.id }}" {% unless request.design_mode %}style="display: none;"{% endunless %}>
   <button 
     type="button" 
     class="try-on-button"
@@ -347,6 +347,14 @@
   window.addEventListener('DOMContentLoaded', async function() {
     const productId = '{{ product.id }}';
     const shop = '{{ shop.permanent_domain }}';
+    const isThemeEditor = {{ request.design_mode | json }};
+    
+    // Always show button in theme editor for preview
+    if (isThemeEditor) {
+      console.log('🎨 Theme editor mode - showing button');
+      document.getElementById('try-on-wrapper-{{ block.id }}').style.display = 'block';
+      return;
+    }
     
     console.log('🔍 Checking try-on status for product:', productId);
     console.log('🏪 Shop:', shop);
