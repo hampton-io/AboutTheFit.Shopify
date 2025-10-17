@@ -20,37 +20,178 @@ export default function App() {
 
   return (
     <div className={styles.index}>
-      <div className={styles.content}>
-        <h1 className={styles.heading}>A short heading about [your app]</h1>
-        <p className={styles.text}>
-          A tagline about [your app] that describes your value proposition.
-        </p>
-        {showForm && (
-          <Form className={styles.form} method="post" action="/auth/login">
-            <label className={styles.label}>
-              <span>Shop domain</span>
-              <input className={styles.input} type="text" name="shop" />
-              <span>e.g: my-shop-domain.myshopify.com</span>
-            </label>
-            <button className={styles.button} type="submit">
-              Log in
-            </button>
-          </Form>
-        )}
-        <ul className={styles.list}>
-          <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
-          </li>
-          <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
-          </li>
-          <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
-          </li>
-        </ul>
+      <div className={styles.hero}>
+        <div className={styles.content}>
+          <div className={styles.badge}>🚀 About The Fit - AI Virtual Try-On</div>
+          <h1 className={styles.heading}>
+            Turn Browsers Into Buyers with <span className={styles.brandHighlight} data-text="About The Fit">About The Fit</span>
+          </h1>
+          <p className={styles.subheading}>
+            Reduce returns by 40% and increase conversions by 3x. Let customers see 
+            themselves in your products before they buy. Powered by <span className={styles.brandHighlight} data-text="About The Fit">About The Fit</span>'s cutting-edge AI.
+          </p>
+          
+          {showForm && (
+            <Form className={styles.form} method="post" action="/auth/login">
+              <div className={styles.formGroup}>
+                <input 
+                  className={styles.input} 
+                  type="text" 
+                  name="shop" 
+                  placeholder="your-store.myshopify.com"
+                  required
+                />
+                <button className={styles.ctaButton} type="submit">
+                  Start Free Trial →
+                </button>
+              </div>
+              <p className={styles.formHint}>
+                ✓ No credit card required ✓ 14-day free trial ✓ Setup in 2 minutes
+              </p>
+            </Form>
+          )}
+
+          <div className={styles.socialProof}>
+            <div className={styles.stat}>
+              <div className={styles.statNumber}>40%</div>
+              <div className={styles.statLabel}>Return Reduction</div>
+            </div>
+            <div className={styles.stat}>
+              <div className={styles.statNumber}>3x</div>
+              <div className={styles.statLabel}>Higher Conversions</div>
+            </div>
+            <div className={styles.stat}>
+              <div className={styles.statNumber}>89%</div>
+              <div className={styles.statLabel}>Customer Satisfaction</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.features}>
+        <div className={styles.content}>
+          <h2 className={styles.sectionHeading}>Why Merchants Love About The Fit</h2>
+          
+          <div className={styles.featureGrid}>
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>👁️</div>
+              <h3 className={styles.featureTitle}>Instant Visual Confidence</h3>
+              <p className={styles.featureText}>
+                Let customers upload a photo and see themselves wearing your products instantly. 
+                No guessing, no uncertainty. Just confident purchases.
+              </p>
+            </div>
+
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>📉</div>
+              <h3 className={styles.featureTitle}>Slash Returns by 40%</h3>
+              <p className={styles.featureText}>
+                When customers know exactly how products look on them, they keep what they buy. 
+                Save thousands in return shipping and processing costs.
+              </p>
+            </div>
+
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>⚡</div>
+              <h3 className={styles.featureTitle}>2-Minute Setup</h3>
+              <p className={styles.featureText}>
+                No complex integrations or technical skills needed. Install, pick products, 
+                and go live. Our AI handles everything automatically.
+              </p>
+            </div>
+
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>🎨</div>
+              <h3 className={styles.featureTitle}>Seamless Brand Integration</h3>
+              <p className={styles.featureText}>
+                Matches your store's design perfectly. Customizable buttons, colors, and placement 
+                make it feel like a native part of your store.
+              </p>
+            </div>
+
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>🤖</div>
+              <h3 className={styles.featureTitle}>Powered by Google AI</h3>
+              <p className={styles.featureText}>
+                Industry-leading AI technology creates photorealistic virtual try-ons in seconds. 
+                Your customers get studio-quality results every time.
+              </p>
+            </div>
+
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>📊</div>
+              <h3 className={styles.featureTitle}>Smart Analytics Dashboard</h3>
+              <p className={styles.featureText}>
+                Track which products get tried on most, conversion rates, and customer engagement. 
+                Make data-driven decisions to boost sales.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.howItWorks}>
+        <div className={styles.content}>
+          <h2 className={styles.sectionHeading}>How It Works</h2>
+          
+          <div className={styles.steps}>
+            <div className={styles.step}>
+              <div className={styles.stepNumber}>1</div>
+              <h3 className={styles.stepTitle}>Install the App</h3>
+              <p className={styles.stepText}>
+                One-click install from the Shopify App Store. No coding required.
+              </p>
+            </div>
+
+            <div className={styles.step}>
+              <div className={styles.stepNumber}>2</div>
+              <h3 className={styles.stepTitle}>Enable Try-On</h3>
+              <p className={styles.stepText}>
+                Select which products you want to enable virtual try-on for in seconds.
+              </p>
+            </div>
+
+            <div className={styles.step}>
+              <div className={styles.stepNumber}>3</div>
+              <h3 className={styles.stepTitle}>Watch Sales Soar</h3>
+              <p className={styles.stepText}>
+                Customers try on, fall in love, and buy with confidence. You win.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.cta}>
+        <div className={styles.content}>
+          <h2 className={styles.ctaHeading}>
+            Ready to Transform Your Fashion Store?
+          </h2>
+          <p className={styles.ctaText}>
+            Join hundreds of fashion merchants who've boosted sales and slashed returns 
+            with <span className={styles.brandHighlight} data-text="About The Fit">About The Fit</span>'s AI-powered virtual try-on.
+          </p>
+          
+          {showForm && (
+            <Form className={styles.form} method="post" action="/auth/login">
+              <div className={styles.formGroup}>
+                <input 
+                  className={styles.input} 
+                  type="text" 
+                  name="shop" 
+                  placeholder="your-store.myshopify.com"
+                  required
+                />
+                <button className={styles.ctaButton} type="submit">
+                  Start Free Trial →
+                </button>
+              </div>
+              <p className={styles.formHint}>
+                ✓ 14-day free trial ✓ Cancel anytime ✓ No credit card required
+              </p>
+            </Form>
+          )}
+        </div>
       </div>
     </div>
   );
