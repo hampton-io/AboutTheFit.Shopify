@@ -1,4 +1,5 @@
-import type { MetaFunction, LinksFunction } from "react-router";
+import type { MetaFunction } from "react-router";
+import "../styles/terms.css";
 
 export const meta: MetaFunction = () => {
   return [
@@ -6,10 +7,6 @@ export const meta: MetaFunction = () => {
     { name: "description", content: "Terms of Service for About The Fit AI Virtual Try-On App" },
   ];
 };
-
-export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: "/app/styles/terms.css" },
-];
 
 export default function TermsOfService() {
   return (
