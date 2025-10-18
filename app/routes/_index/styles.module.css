@@ -128,6 +128,44 @@
     0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
+.inputError {
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+}
+
+.inputError:focus {
+  border-color: rgba(239, 68, 68, 0.8) !important;
+  box-shadow: 
+    0 0 0 4px rgba(239, 68, 68, 0.15),
+    0 8px 32px rgba(239, 68, 68, 0.2) !important;
+}
+
+.formError {
+  font-size: 14px;
+  color: rgba(239, 68, 68, 0.9);
+  margin: -12px 0 12px;
+  text-align: center;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .ctaButton {
   padding: 20px 36px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

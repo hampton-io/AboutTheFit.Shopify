@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, Form, useLoaderData, Link } from "react-router";
+import { useState } from "react";
 
 import { login } from "../../shopify.server";
 
@@ -17,6 +18,47 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function App() {
   const { showForm } = useLoaderData<typeof loader>();
+  const [shopError, setShopError] = useState("");
+
+  const validateShopDomain = (value: string) => {
+    // Remove whitespace
+    const trimmedValue = value.trim();
+    
+    // Check if empty
+    if (!trimmedValue) {
+      return "Please enter your shop domain";
+    }
+    
+    // Check if it matches the Shopify store pattern
+    const shopifyPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
+    
+    if (!shopifyPattern.test(trimmedValue)) {
+      return "Please enter a valid Shopify store URL (e.g., your-store.myshopify.com)";
+    }
+    
+    return "";
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const formData = new FormData(e.currentTarget);
+    const shop = formData.get("shop") as string;
+    const error = validateShopDomain(shop);
+    
+    if (error) {
+      e.preventDefault();
+      setShopError(error);
+      return;
+    }
+    
+    setShopError("");
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Clear error when user starts typing
+    if (shopError) {
+      setShopError("");
+    }
+  };
 
   return (
     <div className={styles.index}>
@@ -32,19 +74,23 @@ export default function App() {
           </p>
           
           {showForm && (
-            <Form className={styles.form} method="post" action="/auth/login">
+            <Form className={styles.form} method="post" action="/auth/login" onSubmit={handleSubmit}>
               <div className={styles.formGroup}>
                 <input 
-                  className={styles.input} 
+                  className={`${styles.input} ${shopError ? styles.inputError : ''}`}
                   type="text" 
                   name="shop" 
                   placeholder="your-store.myshopify.com"
+                  onChange={handleInputChange}
+                  pattern="[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com"
+                  title="Enter your Shopify store URL (e.g., your-store.myshopify.com)"
                   required
                 />
                 <button className={styles.ctaButton} type="submit">
                   Start Free Trial →
                 </button>
               </div>
+              {shopError && <p className={styles.formError}>{shopError}</p>}
               <p className={styles.formHint}>
                 ✓ No credit card required ✓ 14-day free trial ✓ Setup in 2 minutes
               </p>
@@ -173,19 +219,23 @@ export default function App() {
           </p>
           
           {showForm && (
-            <Form className={styles.form} method="post" action="/auth/login">
+            <Form className={styles.form} method="post" action="/auth/login" onSubmit={handleSubmit}>
               <div className={styles.formGroup}>
                 <input 
-                  className={styles.input} 
+                  className={`${styles.input} ${shopError ? styles.inputError : ''}`}
                   type="text" 
                   name="shop" 
                   placeholder="your-store.myshopify.com"
+                  onChange={handleInputChange}
+                  pattern="[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com"
+                  title="Enter your Shopify store URL (e.g., your-store.myshopify.com)"
                   required
                 />
                 <button className={styles.ctaButton} type="submit">
                   Start Free Trial →
                 </button>
               </div>
+              {shopError && <p className={styles.formError}>{shopError}</p>}
               <p className={styles.formHint}>
                 ✓ 14-day free trial ✓ Cancel anytime ✓ No credit card required
               </p>
