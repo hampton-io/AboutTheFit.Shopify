@@ -20,7 +20,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       );
     }
 
-    const success = await toggleProductTryOn(
+    const result = await toggleProductTryOn(
       session.shop,
       productId,
       productTitle,
@@ -28,15 +28,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       enabled
     );
 
-    if (success) {
+    if (result.success) {
       return Response.json({
         success: true,
         message: `Try-on ${enabled ? 'enabled' : 'disabled'} for ${productTitle}`,
       });
     } else {
       return Response.json(
-        { success: false, error: 'Failed to update product' },
-        { status: 500 }
+        { success: false, error: result.error || 'Failed to update product' },
+        { status: 400 }
       );
     }
   } catch (error) {

@@ -61,14 +61,16 @@ enum TryOnStatus {
 }
 
 model AppMetadata {
-  id           String   @id @default(cuid())
-  shop         String   @unique
-  creditsUsed  Int      @default(0)
-  creditsLimit Int      @default(10)
-  isActive     Boolean  @default(true)
-  settings     Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                    String    @id @default(cuid())
+  shop                  String    @unique
+  creditsUsed           Int       @default(0)
+  creditsLimit          Int       @default(10)
+  isActive              Boolean   @default(true)
+  subscriptionCreatedAt DateTime?
+  lastResetDate         DateTime  @default(now())
+  settings              Json?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }
 
 model ProductTryOnSettings {

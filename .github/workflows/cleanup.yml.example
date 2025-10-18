@@ -1,0 +1,33 @@
+# Example: Scheduled Cleanup Workflow
+# Rename to cleanup.yml to enable
+# This runs daily at 3 AM UTC and cleans up old user photos
+
+name: Scheduled Storage Cleanup
+
+on:
+  schedule:
+    # Run daily at 3 AM UTC (adjust timezone as needed)
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup old files
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            ${{ secrets.APP_URL }}/api/cleanup
+        continue-on-error: true
+
+      - name: Log completion
+        run: echo "Cleanup task completed"
+
+# Setup instructions:
+# 1. Rename this file to .github/workflows/cleanup.yml
+# 2. Add secrets in GitHub repo settings:
+#    - APP_URL: Your app URL (e.g., https://your-app.railway.app)
+#    - CRON_SECRET: Random secret for authentication (optional)
+# 3. Add CRON_SECRET to your app's environment variables
+

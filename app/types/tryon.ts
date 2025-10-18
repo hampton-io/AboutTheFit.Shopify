@@ -2,7 +2,7 @@
  * Type definitions for the virtual try-on feature
  */
 
-import type { TryOnStatus } from '@prisma/client';
+import type { TryOnStatus, TryOnRequest } from '../db.server';
 
 // Request types
 export interface CreateTryOnRequest {
@@ -14,21 +14,8 @@ export interface ProcessTryOnRequest {
   requestId: string;
 }
 
-// Response types
-export interface TryOnRequestData {
-  id: string;
-  shop: string;
-  productId: string;
-  productTitle: string;
-  productImage: string;
-  userPhotoUrl: string;
-  resultImageUrl: string | null;
-  status: TryOnStatus;
-  errorMessage: string | null;
-  metadata?: Record<string, any>;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// Response types - Use Prisma-generated type
+export type TryOnRequestData = TryOnRequest;
 
 export interface TryOnListResponse {
   requests: TryOnRequestData[];

@@ -1,23 +1,21 @@
 import { PrismaClient } from "@prisma/client";
 
-declare global {
-  // eslint-disable-next-line no-var
-  var prismaGlobal: PrismaClient | undefined;
+// Recommended pattern from Prisma React Router 7 docs
+// https://www.prisma.io/docs/guides/react-router-7
+const globalForPrisma = global as unknown as { 
+  prisma: PrismaClient | undefined
 }
 
-// PrismaClient configuration for serverless environments
-const prismaClientSingleton = () => {
-  return new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-  });
-};
-
-// In development, use global to prevent multiple instances during hot reloads
-// In production (serverless), create new instances as needed
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
+const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+})
 
 if (process.env.NODE_ENV !== "production") {
-  globalThis.prismaGlobal = prisma;
+  globalForPrisma.prisma = prisma
 }
 
 export default prisma;
+
+// Re-export Prisma types for use throughout the app
+export { TryOnStatus } from "@prisma/client";
+export type { TryOnRequest, AppMetadata, ProductTryOnSettings } from "@prisma/client";

@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs } from 'react-router';
 import db from '../db.server';
+import { hasTryOnLimitsExceeded } from '../services/billing.server';
 
 /**
  * Check if try-on is enabled for a specific product
@@ -14,8 +15,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.log('Check enabled - raw productId:', productId);
     console.log('Check enabled - shop:', shop);
 
-    if (!productId) {
+    if (!productId || !shop) {
       return Response.json({ enabled: false }, { status: 400 });
+    }
+
+    // Check if shop has exceeded try-on limits
+    const limitsExceeded = await hasTryOnLimitsExceeded(shop);
+    if (limitsExceeded) {
+      console.log('Try-on limits exceeded for shop:', shop);
+      return Response.json({ enabled: false, reason: 'limit_exceeded' });
     }
 
     // Build both formats to check against database
@@ -37,7 +45,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           { productId: numericId },
           { productId: gidFormat },
         ],
-        ...(shop ? { shop } : {}),
+        shop,
         tryOnEnabled: true,
       },
     });

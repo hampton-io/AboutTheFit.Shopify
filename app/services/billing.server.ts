@@ -6,30 +6,34 @@ const PLANS = {
   FREE: {
     name: "Free Plan",
     price: 0,
-    credits: 10,
+    credits: 50,
+    productLimit: 3,
     trialDays: 0,
-    features: ["10 credits per month", "Basic virtual try-on"],
+    features: ["50 try-ons per month", "Up to 3 products", "Basic virtual try-on"],
   },
   SIDE_HUSSL: {
     name: "Side Hussle",
     price: 9.99,
     credits: 500,
+    productLimit: 100,
     trialDays: 7,
-    features: ["500 credits per month", "Priority support", "Advanced features"],
+    features: ["500 try-ons per month", "Up to 100 products", "Priority support", "Advanced features"],
   },
   BUSINESS: {
     name: "Business",
     price: 39.0,
     credits: 10000,
+    productLimit: -1, // -1 represents unlimited
     trialDays: 14,
-    features: ["10,000 credits per month", "Priority support", "Analytics dashboard"],
+    features: ["10,000 try-ons per month", "Unlimited products", "Priority support", "Analytics dashboard"],
   },
   ALL_IN: {
     name: "All In",
     price: 99.0,
     credits: -1, // -1 represents unlimited
+    productLimit: -1, // -1 represents unlimited
     trialDays: 14,
-    features: ["Unlimited credits", "White-label options", "Dedicated support"],
+    features: ["Unlimited try-ons", "Unlimited products", "White-label options", "Dedicated support"],
   },
 } as const;
 
@@ -53,7 +57,8 @@ export async function createSubscription(
     console.log('💰 Free plan - updating database');
     // Handle free plan - just update database
     await updateShopPlan(session.shop, planKey);
-    return `/app?plan=free&success=true`;
+    // Return empty string to signal success without redirect (same as dev mode)
+    return '';
   }
 
   try {
@@ -354,6 +359,7 @@ async function updateShopPlan(shop: string, planKey: PlanKey): Promise<void> {
       creditsLimit: plan.credits,
       isActive: true,
       subscriptionCreatedAt: now,
+      lastResetDate: now,
     },
     create: {
       shop,
@@ -361,8 +367,92 @@ async function updateShopPlan(shop: string, planKey: PlanKey): Promise<void> {
       creditsLimit: plan.credits,
       isActive: true,
       subscriptionCreatedAt: now,
+      lastResetDate: now,
     },
   });
+}
+
+/**
+ * Check if monthly period has passed and reset credits if needed
+ */
+export async function checkAndResetMonthlyLimits(shop: string): Promise<void> {
+  const metadata = await prisma.appMetadata.findUnique({
+    where: { shop },
+  });
+
+  if (!metadata) return;
+
+  const now = new Date();
+  const lastReset = new Date(metadata.lastResetDate);
+  const daysSinceReset = Math.floor((now.getTime() - lastReset.getTime()) / (1000 * 60 * 60 * 24));
+
+  // Reset if 30 days have passed
+  if (daysSinceReset >= 30) {
+    await prisma.appMetadata.update({
+      where: { shop },
+      data: {
+        creditsUsed: 0,
+        lastResetDate: now,
+      },
+    });
+  }
+}
+
+/**
+ * Check if shop has exceeded try-on limits
+ */
+export async function hasTryOnLimitsExceeded(shop: string): Promise<boolean> {
+  await checkAndResetMonthlyLimits(shop);
+  
+  const metadata = await prisma.appMetadata.findUnique({
+    where: { shop },
+  });
+
+  if (!metadata) return true; // No metadata means no access
+
+  // Unlimited credits (-1)
+  if (metadata.creditsLimit === -1) return false;
+
+  return metadata.creditsUsed >= metadata.creditsLimit;
+}
+
+/**
+ * Check if shop has exceeded product limits
+ */
+export async function hasProductLimitsExceeded(shop: string): Promise<{ exceeded: boolean; limit: number; current: number }> {
+  const metadata = await prisma.appMetadata.findUnique({
+    where: { shop },
+  });
+
+  if (!metadata) {
+    return { exceeded: true, limit: 0, current: 0 };
+  }
+
+  // Find the plan based on credits limit
+  const planKey = Object.keys(PLANS).find(key => 
+    PLANS[key as PlanKey].credits === metadata.creditsLimit
+  ) as PlanKey || 'FREE';
+  
+  const plan = PLANS[planKey];
+  
+  // Count enabled products
+  const enabledCount = await prisma.productTryOnSettings.count({
+    where: {
+      shop,
+      tryOnEnabled: true,
+    },
+  });
+
+  // Unlimited products (-1)
+  if (plan.productLimit === -1) {
+    return { exceeded: false, limit: -1, current: enabledCount };
+  }
+
+  return {
+    exceeded: enabledCount >= plan.productLimit,
+    limit: plan.productLimit,
+    current: enabledCount,
+  };
 }
 
 /**

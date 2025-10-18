@@ -1,0 +1,522 @@
+{
+  "buildManifest": {
+    "serverBundles": {
+      "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0": {
+        "id": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+        "file": "build/server/nodejs_eyJydW50aW1lIjoibm9kZWpzIn0/index.js",
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    },
+    "routeIdToServerBundleId": {
+      "routes/api.proxy.check-enabled": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.proxy.tryon.create": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.billing.confirm": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.admin.products": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.billing.cancel": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.billing.create": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.billing.status": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.admin.toggle": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.admin.stats": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.cleanup": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/auth.login": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/uploads.$": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/webhooks": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/webhooks.app.scopes_update": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/webhooks.app.uninstalled": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/privacy": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/_index": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/auth.$": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/terms": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app.additional": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/app._index": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0"
+    },
+    "routes": {
+      "root": {
+        "id": "root",
+        "file": "app/root.tsx",
+        "path": "",
+        "config": {}
+      },
+      "routes/api.proxy.check-enabled": {
+        "id": "routes/api.proxy.check-enabled",
+        "parentId": "root",
+        "file": "app/routes/api.proxy.check-enabled.tsx",
+        "path": "api/proxy/check-enabled",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.proxy.tryon.create": {
+        "id": "routes/api.proxy.tryon.create",
+        "parentId": "root",
+        "file": "app/routes/api.proxy.tryon.create.tsx",
+        "path": "api/proxy/tryon/create",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.billing.confirm": {
+        "id": "routes/api.billing.confirm",
+        "parentId": "root",
+        "file": "app/routes/api.billing.confirm.tsx",
+        "path": "api/billing/confirm",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.admin.products": {
+        "id": "routes/api.admin.products",
+        "parentId": "root",
+        "file": "app/routes/api.admin.products.tsx",
+        "path": "api/admin/products",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.billing.cancel": {
+        "id": "routes/api.billing.cancel",
+        "parentId": "root",
+        "file": "app/routes/api.billing.cancel.tsx",
+        "path": "api/billing/cancel",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.billing.create": {
+        "id": "routes/api.billing.create",
+        "parentId": "root",
+        "file": "app/routes/api.billing.create.tsx",
+        "path": "api/billing/create",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.billing.status": {
+        "id": "routes/api.billing.status",
+        "parentId": "root",
+        "file": "app/routes/api.billing.status.tsx",
+        "path": "api/billing/status",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.admin.toggle": {
+        "id": "routes/api.admin.toggle",
+        "parentId": "root",
+        "file": "app/routes/api.admin.toggle.tsx",
+        "path": "api/admin/toggle",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.admin.stats": {
+        "id": "routes/api.admin.stats",
+        "parentId": "root",
+        "file": "app/routes/api.admin.stats.tsx",
+        "path": "api/admin/stats",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.cleanup": {
+        "id": "routes/api.cleanup",
+        "parentId": "root",
+        "file": "app/routes/api.cleanup.tsx",
+        "path": "api/cleanup",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/auth.login": {
+        "id": "routes/auth.login",
+        "parentId": "root",
+        "file": "app/routes/auth.login/route.tsx",
+        "path": "auth/login",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/uploads.$": {
+        "id": "routes/uploads.$",
+        "parentId": "root",
+        "file": "app/routes/uploads.$.tsx",
+        "path": "uploads/*",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/webhooks": {
+        "id": "routes/webhooks",
+        "parentId": "root",
+        "file": "app/routes/webhooks.tsx",
+        "path": "webhooks",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/webhooks.app.scopes_update": {
+        "id": "routes/webhooks.app.scopes_update",
+        "parentId": "routes/webhooks",
+        "file": "app/routes/webhooks.app.scopes_update.tsx",
+        "path": "app/scopes_update",
+        "config": {}
+      },
+      "routes/webhooks.app.uninstalled": {
+        "id": "routes/webhooks.app.uninstalled",
+        "parentId": "routes/webhooks",
+        "file": "app/routes/webhooks.app.uninstalled.tsx",
+        "path": "app/uninstalled",
+        "config": {}
+      },
+      "routes/privacy": {
+        "id": "routes/privacy",
+        "parentId": "root",
+        "file": "app/routes/privacy.tsx",
+        "path": "privacy",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/_index": {
+        "id": "routes/_index",
+        "parentId": "root",
+        "file": "app/routes/_index/route.tsx",
+        "index": true,
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/auth.$": {
+        "id": "routes/auth.$",
+        "parentId": "root",
+        "file": "app/routes/auth.$.tsx",
+        "path": "auth/*",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/terms": {
+        "id": "routes/terms",
+        "parentId": "root",
+        "file": "app/routes/terms.tsx",
+        "path": "terms",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app": {
+        "id": "routes/app",
+        "parentId": "root",
+        "file": "app/routes/app.tsx",
+        "path": "app",
+        "config": {}
+      },
+      "routes/app.additional": {
+        "id": "routes/app.additional",
+        "parentId": "routes/app",
+        "file": "app/routes/app.additional.tsx",
+        "path": "additional",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/app._index": {
+        "id": "routes/app._index",
+        "parentId": "routes/app",
+        "file": "app/routes/app._index.tsx",
+        "index": true,
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    }
+  },
+  "reactRouterConfig": {
+    "appDirectory": "/Users/floydprice/dev/about-the-fit/app",
+    "basename": "/",
+    "buildDirectory": "/Users/floydprice/dev/about-the-fit/build",
+    "future": {
+      "v8_middleware": false,
+      "unstable_optimizeDeps": false,
+      "unstable_splitRouteModules": false,
+      "unstable_subResourceIntegrity": false,
+      "unstable_viteEnvironmentApi": false
+    },
+    "routes": {
+      "root": {
+        "id": "root",
+        "file": "root.tsx",
+        "path": ""
+      },
+      "routes/api.proxy.check-enabled": {
+        "id": "routes/api.proxy.check-enabled",
+        "parentId": "root",
+        "file": "routes/api.proxy.check-enabled.tsx",
+        "path": "api/proxy/check-enabled"
+      },
+      "routes/api.proxy.tryon.create": {
+        "id": "routes/api.proxy.tryon.create",
+        "parentId": "root",
+        "file": "routes/api.proxy.tryon.create.tsx",
+        "path": "api/proxy/tryon/create"
+      },
+      "routes/api.billing.confirm": {
+        "id": "routes/api.billing.confirm",
+        "parentId": "root",
+        "file": "routes/api.billing.confirm.tsx",
+        "path": "api/billing/confirm"
+      },
+      "routes/api.admin.products": {
+        "id": "routes/api.admin.products",
+        "parentId": "root",
+        "file": "routes/api.admin.products.tsx",
+        "path": "api/admin/products"
+      },
+      "routes/api.billing.cancel": {
+        "id": "routes/api.billing.cancel",
+        "parentId": "root",
+        "file": "routes/api.billing.cancel.tsx",
+        "path": "api/billing/cancel"
+      },
+      "routes/api.billing.create": {
+        "id": "routes/api.billing.create",
+        "parentId": "root",
+        "file": "routes/api.billing.create.tsx",
+        "path": "api/billing/create"
+      },
+      "routes/api.billing.status": {
+        "id": "routes/api.billing.status",
+        "parentId": "root",
+        "file": "routes/api.billing.status.tsx",
+        "path": "api/billing/status"
+      },
+      "routes/api.admin.toggle": {
+        "id": "routes/api.admin.toggle",
+        "parentId": "root",
+        "file": "routes/api.admin.toggle.tsx",
+        "path": "api/admin/toggle"
+      },
+      "routes/api.admin.stats": {
+        "id": "routes/api.admin.stats",
+        "parentId": "root",
+        "file": "routes/api.admin.stats.tsx",
+        "path": "api/admin/stats"
+      },
+      "routes/api.cleanup": {
+        "id": "routes/api.cleanup",
+        "parentId": "root",
+        "file": "routes/api.cleanup.tsx",
+        "path": "api/cleanup"
+      },
+      "routes/auth.login": {
+        "id": "routes/auth.login",
+        "parentId": "root",
+        "file": "routes/auth.login/route.tsx",
+        "path": "auth/login"
+      },
+      "routes/uploads.$": {
+        "id": "routes/uploads.$",
+        "parentId": "root",
+        "file": "routes/uploads.$.tsx",
+        "path": "uploads/*"
+      },
+      "routes/webhooks": {
+        "id": "routes/webhooks",
+        "parentId": "root",
+        "file": "routes/webhooks.tsx",
+        "path": "webhooks"
+      },
+      "routes/webhooks.app.scopes_update": {
+        "id": "routes/webhooks.app.scopes_update",
+        "parentId": "routes/webhooks",
+        "file": "routes/webhooks.app.scopes_update.tsx",
+        "path": "app/scopes_update"
+      },
+      "routes/webhooks.app.uninstalled": {
+        "id": "routes/webhooks.app.uninstalled",
+        "parentId": "routes/webhooks",
+        "file": "routes/webhooks.app.uninstalled.tsx",
+        "path": "app/uninstalled"
+      },
+      "routes/privacy": {
+        "id": "routes/privacy",
+        "parentId": "root",
+        "file": "routes/privacy.tsx",
+        "path": "privacy"
+      },
+      "routes/_index": {
+        "id": "routes/_index",
+        "parentId": "root",
+        "file": "routes/_index/route.tsx",
+        "index": true
+      },
+      "routes/auth.$": {
+        "id": "routes/auth.$",
+        "parentId": "root",
+        "file": "routes/auth.$.tsx",
+        "path": "auth/*"
+      },
+      "routes/terms": {
+        "id": "routes/terms",
+        "parentId": "root",
+        "file": "routes/terms.tsx",
+        "path": "terms"
+      },
+      "routes/app": {
+        "id": "routes/app",
+        "parentId": "root",
+        "file": "routes/app.tsx",
+        "path": "app"
+      },
+      "routes/app.additional": {
+        "id": "routes/app.additional",
+        "parentId": "routes/app",
+        "file": "routes/app.additional.tsx",
+        "path": "additional"
+      },
+      "routes/app._index": {
+        "id": "routes/app._index",
+        "parentId": "routes/app",
+        "file": "routes/app._index.tsx",
+        "index": true
+      }
+    },
+    "routeDiscovery": {
+      "mode": "lazy",
+      "manifestPath": "/__manifest"
+    },
+    "serverBuildFile": "index.js",
+    "serverModuleFormat": "esm",
+    "ssr": true,
+    "unstable_routeConfig": [
+      {
+        "id": "root",
+        "path": "",
+        "file": "root.tsx",
+        "children": [
+          {
+            "id": "routes/api.proxy.check-enabled",
+            "file": "routes/api.proxy.check-enabled.tsx",
+            "path": "api/proxy/check-enabled"
+          },
+          {
+            "id": "routes/api.proxy.tryon.create",
+            "file": "routes/api.proxy.tryon.create.tsx",
+            "path": "api/proxy/tryon/create"
+          },
+          {
+            "id": "routes/api.billing.confirm",
+            "file": "routes/api.billing.confirm.tsx",
+            "path": "api/billing/confirm"
+          },
+          {
+            "id": "routes/api.admin.products",
+            "file": "routes/api.admin.products.tsx",
+            "path": "api/admin/products"
+          },
+          {
+            "id": "routes/api.billing.cancel",
+            "file": "routes/api.billing.cancel.tsx",
+            "path": "api/billing/cancel"
+          },
+          {
+            "id": "routes/api.billing.create",
+            "file": "routes/api.billing.create.tsx",
+            "path": "api/billing/create"
+          },
+          {
+            "id": "routes/api.billing.status",
+            "file": "routes/api.billing.status.tsx",
+            "path": "api/billing/status"
+          },
+          {
+            "id": "routes/api.admin.toggle",
+            "file": "routes/api.admin.toggle.tsx",
+            "path": "api/admin/toggle"
+          },
+          {
+            "id": "routes/api.admin.stats",
+            "file": "routes/api.admin.stats.tsx",
+            "path": "api/admin/stats"
+          },
+          {
+            "id": "routes/api.cleanup",
+            "file": "routes/api.cleanup.tsx",
+            "path": "api/cleanup"
+          },
+          {
+            "id": "routes/auth.login",
+            "file": "routes/auth.login/route.tsx",
+            "path": "auth/login"
+          },
+          {
+            "id": "routes/uploads.$",
+            "file": "routes/uploads.$.tsx",
+            "path": "uploads/*"
+          },
+          {
+            "id": "routes/webhooks",
+            "file": "routes/webhooks.tsx",
+            "path": "webhooks",
+            "children": [
+              {
+                "id": "routes/webhooks.app.scopes_update",
+                "file": "routes/webhooks.app.scopes_update.tsx",
+                "path": "app/scopes_update"
+              },
+              {
+                "id": "routes/webhooks.app.uninstalled",
+                "file": "routes/webhooks.app.uninstalled.tsx",
+                "path": "app/uninstalled"
+              }
+            ]
+          },
+          {
+            "id": "routes/privacy",
+            "file": "routes/privacy.tsx",
+            "path": "privacy"
+          },
+          {
+            "id": "routes/_index",
+            "file": "routes/_index/route.tsx",
+            "index": true
+          },
+          {
+            "id": "routes/auth.$",
+            "file": "routes/auth.$.tsx",
+            "path": "auth/*"
+          },
+          {
+            "id": "routes/terms",
+            "file": "routes/terms.tsx",
+            "path": "terms"
+          },
+          {
+            "id": "routes/app",
+            "file": "routes/app.tsx",
+            "path": "app",
+            "children": [
+              {
+                "id": "routes/app.additional",
+                "file": "routes/app.additional.tsx",
+                "path": "additional"
+              },
+              {
+                "id": "routes/app._index",
+                "file": "routes/app._index.tsx",
+                "index": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "viteConfig": {
+    "build": {
+      "assetsDir": "assets"
+    }
+  }
+}

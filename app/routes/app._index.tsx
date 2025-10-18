@@ -9,30 +9,34 @@ const PLANS = {
   FREE: {
     name: "Free Plan",
     price: 0,
-    credits: 10,
+    credits: 50,
+    productLimit: 3,
     trialDays: 0,
-    features: ["10 credits per month", "Basic virtual try-on"],
+    features: ["Up to 3 products", "Basic virtual try-on"],
   },
   SIDE_HUSSL: {
     name: "Side Hussle",
     price: 9.99,
     credits: 500,
+    productLimit: 100,
     trialDays: 7,
-    features: ["500 credits per month", "Priority support", "Advanced features"],
+    features: ["Up to 100 products", "Priority support", "Advanced features"],
   },
   BUSINESS: {
     name: "Business",
     price: 39.0,
     credits: 10000,
+    productLimit: -1, // -1 represents unlimited
     trialDays: 14,
-    features: ["10,000 credits per month", "Priority support", "Analytics dashboard"],
+    features: ["Unlimited products", "Priority support", "Analytics dashboard"],
   },
   ALL_IN: {
     name: "All In",
     price: 99.0,
     credits: -1, // -1 represents unlimited
+    productLimit: -1, // -1 represents unlimited
     trialDays: 14,
-    features: ["Unlimited credits", "White-label options", "Dedicated support"],
+    features: ["Unlimited products", "White-label options", "Dedicated support"],
   },
 } as const;
 
@@ -65,6 +69,9 @@ interface Stats {
   totalTryOns: number;
   creditsUsed: number;
   creditsRemaining: number;
+  creditsLimit: number;
+  productLimit: number;
+  daysUntilReset: number;
 }
 
 interface Subscription {
@@ -128,13 +135,15 @@ export default function Index() {
     }
   }, [billingFetcher.data]);
 
-  // Handle toggle success
+  // Handle toggle success or error
   useEffect(() => {
     if (toggleFetcher.data?.success) {
       shopify.toast.show(toggleFetcher.data.message || 'Updated successfully');
       // Reload products and stats
       productsFetcher.load('/api/admin/products?first=50');
       statsFetcher.load('/api/admin/stats');
+    } else if (toggleFetcher.data?.error) {
+      shopify.toast.show(toggleFetcher.data.error, { isError: true });
     }
   }, [toggleFetcher.data]);
 
@@ -229,49 +238,236 @@ export default function Index() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gridTemplateColumns: 'repeat(2, 1fr)',
               gap: '16px',
             }}
           >
+            {/* Products with Try-On Enabled */}
             <s-box padding="base" borderWidth="base" borderRadius="base">
               <s-stack direction="block" gap="base">
-                <s-text>Products</s-text>
-                <s-heading>{stats.totalProducts}</s-heading>
-                <s-text tone="neutral">Total products in store</s-text>
-              </s-stack>
-            </s-box>
-
-            <s-box padding="base" borderWidth="base" borderRadius="base">
-              <s-stack direction="block" gap="base">
-                <s-text>Try-On Enabled</s-text>
-                <s-heading>{stats.productsWithTryOn}</s-heading>
-                <s-text tone="neutral">Products with try-on active</s-text>
-              </s-stack>
-            </s-box>
-
-            <s-box padding="base" borderWidth="base" borderRadius="base">
-              <s-stack direction="block" gap="base">
-                <s-text>Total Try-Ons</s-text>
-                <s-heading>{stats.totalTryOns}</s-heading>
-                <s-text tone="neutral">Generated this month</s-text>
-              </s-stack>
-            </s-box>
-
-            <s-box padding="base" borderWidth="base" borderRadius="base">
-              <s-stack direction="block" gap="base">
-                <s-text>Credits</s-text>
-                <s-heading>{stats.creditsRemaining}</s-heading>
-                <s-text tone="neutral">
-                  of {stats.creditsUsed + stats.creditsRemaining} remaining
-                </s-text>
-                {subscription && (
+                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>
+                  Products with Try-On
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                  <div style={{ fontSize: '32px', fontWeight: '700', lineHeight: '1' }}>
+                    {stats.productsWithTryOn}
+                  </div>
                   <s-text tone="neutral">
-                    {subscription.planName} Plan
-                    {subscription.price > 0 && ` - $${subscription.price}/month`}
+                    {stats.productLimit === -1 
+                      ? 'active' 
+                      : `of ${stats.productLimit}`}
+                  </s-text>
+                </div>
+                {stats.productLimit === -1 ? (
+                  <s-text tone="success">
+                    <strong>Unlimited products allowed on your subscription</strong>
+                  </s-text>
+                ) : stats.productsWithTryOn >= stats.productLimit ? (
+                  <>
+                    <s-text tone="warning">
+                      You've reached your {subscription?.planName || 'plan'} subscription limit
+                    </s-text>
+                    <s-text tone="critical">
+                      <strong>Upgrade your plan to enable more</strong>
+                    </s-text>
+                  </>
+                ) : (
+                  <>
+                    <s-text tone="success">
+                      Your {subscription?.planName || 'current plan'} subscription allows {stats.productLimit - stats.productsWithTryOn} more {stats.productLimit - stats.productsWithTryOn === 1 ? 'product' : 'products'}
+                    </s-text>
+                  </>
+                )}
+              </s-stack>
+            </s-box>
+
+            {/* Customer Engagement */}
+            <s-box padding="base" borderWidth="base" borderRadius="base">
+              <s-stack direction="block" gap="base">
+                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>
+                  Customer Engagement
+                </div>
+                <div style={{ fontSize: '32px', fontWeight: '700', lineHeight: '1' }}>
+                  {stats.totalTryOns}
+                </div>
+                <s-text tone="neutral">
+                  {stats.totalTryOns === 0 
+                    ? 'No try-ons yet' 
+                    : stats.totalTryOns === 1 
+                      ? 'try-on this month'
+                      : 'try-ons this month'}
+                </s-text>
+                {stats.totalTryOns === 0 ? (
+                  <s-text tone="neutral">
+                    Enable try-on on products below to start
+                  </s-text>
+                ) : (
+                  <s-text tone="success">
+                    Customers are trying before buying! 🎉
                   </s-text>
                 )}
               </s-stack>
             </s-box>
+
+            {/* Monthly Try-On Allowance */}
+            <s-box padding="base" borderWidth="base" borderRadius="base">
+              <s-stack direction="block" gap="base">
+                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>
+                  Monthly Try-On Allowance
+                </div>
+                {stats.creditsLimit === -1 ? (
+                  <>
+                    <div style={{ fontSize: '32px', fontWeight: '700', lineHeight: '1' }}>∞</div>
+                    <s-text tone="success">
+                      <strong>Unlimited try-ons</strong>
+                    </s-text>
+                    <s-text tone="neutral">
+                      {stats.creditsUsed === 0 
+                        ? 'Ready for unlimited customers'
+                        : `${stats.creditsUsed} ${stats.creditsUsed === 1 ? 'try-on' : 'try-ons'} used so far`}
+                    </s-text>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                      <div style={{ fontSize: '32px', fontWeight: '700', lineHeight: '1' }}>
+                        {stats.creditsRemaining}
+                      </div>
+                      <s-text tone="neutral">remaining</s-text>
+                    </div>
+                    <s-text tone="neutral">
+                      {stats.creditsUsed === 0 
+                        ? `${stats.creditsLimit} try-ons available`
+                        : `${stats.creditsUsed} of ${stats.creditsLimit} used`}
+                    </s-text>
+                    <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '4px' }}>
+                      Resets {stats.daysUntilReset === 0 ? 'today' : stats.daysUntilReset === 1 ? 'tomorrow' : `in ${stats.daysUntilReset} days`}
+                    </div>
+                    {stats.creditsRemaining < stats.creditsLimit * 0.2 && stats.creditsRemaining > 0 && (
+                      <s-text tone="warning">
+                        <strong>Running low!</strong>
+                      </s-text>
+                    )}
+                  </>
+                )}
+              </s-stack>
+            </s-box>
+
+            {/* Billing & Plans */}
+            <s-box padding="base" borderWidth="base" borderRadius="base">
+              <s-stack direction="block" gap="base">
+                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>
+                  Your Subscription
+                </div>
+                {subscription && (
+                  <>
+                    <div style={{ fontSize: '24px', fontWeight: '700', lineHeight: '1' }}>
+                      {subscription.planName}
+                    </div>
+                    {subscription.price > 0 ? (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                          <div style={{ fontSize: '28px', fontWeight: '700', lineHeight: '1' }}>
+                            ${subscription.price}
+                          </div>
+                          <s-text tone="neutral">/month</s-text>
+                        </div>
+                        <s-text tone="neutral">Billed monthly</s-text>
+                      </>
+                    ) : (
+                      <>
+                        <s-text tone="success">
+                          <strong>✓ No payment required</strong>
+                        </s-text>
+                        <s-text tone="neutral">
+                          {stats?.creditsLimit} try-ons • {stats?.productLimit} products/month
+                        </s-text>
+                      </>
+                    )}
+                    {subscription.createdAt && (
+                      <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '4px' }}>
+                        Member since {new Date(subscription.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+                    )}
+                    <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <s-button
+                        variant="primary"
+                        onClick={() => {
+                          console.log('🔵 Upgrade Plan button clicked');
+                          setShowBillingModal(true);
+                        }}
+                        disabled={billingFetcher.state === 'submitting'}
+                      >
+                        {billingFetcher.state === 'submitting' ? 'Loading...' : subscription.price > 0 ? 'Change Plan' : 'Upgrade Plan'}
+                      </s-button>
+                      {subscription.price > 0 && (
+                        <s-button
+                          variant="secondary"
+                          onClick={handleCancelSubscription}
+                          disabled={billingCancelFetcher.state === 'submitting'}
+                        >
+                          {billingCancelFetcher.state === 'submitting' ? 'Cancelling...' : 'Cancel Subscription'}
+                        </s-button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </s-stack>
+            </s-box>
+          </div>
+        </s-section>
+      )}
+
+      {/* Warning Banners */}
+      {stats && stats.creditsLimit !== -1 && stats.creditsRemaining < stats.creditsLimit * 0.2 && (
+        <s-section>
+          <div style={{ 
+            backgroundColor: '#fff4e5', 
+            border: '1px solid #ffc453', 
+            borderRadius: '8px',
+            padding: '16px'
+          }}>
+            <s-stack direction="block" gap="base">
+              <div style={{ fontWeight: 'bold', color: '#996f00' }}>
+                ⚠️ Try-On Limit Warning
+              </div>
+              <div style={{ color: '#663c00' }}>
+                You're running low on try-ons! You have {stats.creditsRemaining} of {stats.creditsLimit} remaining this month. 
+                Resets in {stats.daysUntilReset} days.
+              </div>
+              <s-button 
+                variant="primary" 
+                onClick={() => setShowBillingModal(true)}
+              >
+                Upgrade Plan
+              </s-button>
+            </s-stack>
+          </div>
+        </s-section>
+      )}
+
+      {stats && stats.productLimit !== -1 && stats.productsWithTryOn >= stats.productLimit && (
+        <s-section>
+          <div style={{ 
+            backgroundColor: '#ffeaea', 
+            border: '1px solid #ff5252', 
+            borderRadius: '8px',
+            padding: '16px'
+          }}>
+            <s-stack direction="block" gap="base">
+              <div style={{ fontWeight: 'bold', color: '#c41e3a' }}>
+                🚫 Product Limit Reached
+              </div>
+              <div style={{ color: '#a01829' }}>
+                You've reached your product limit of {stats.productLimit}. Upgrade your plan to enable try-on for more products.
+              </div>
+              <s-button 
+                variant="primary" 
+                onClick={() => setShowBillingModal(true)}
+              >
+                Upgrade Plan
+              </s-button>
+            </s-stack>
           </div>
         </s-section>
       )}
@@ -280,9 +476,7 @@ export default function Index() {
       <s-section heading="Manage Products">
         <s-stack direction="block" gap="base">
           <s-paragraph>
-            Enable or disable virtual try-on for individual products. When
-            enabled, customers will see a &quot;Try It On&quot; button on the
-            product page.
+            Enable virtual try-on for individual products below.
           </s-paragraph>
 
           {/* Search */}
@@ -417,47 +611,24 @@ export default function Index() {
         </s-stack>
       </s-section>
 
-      <s-section slot="aside" heading="Billing & Plans">
+      {/* Setup Section */}
+      <s-section slot="aside" heading="Add About the Fit to your product pages">
         <s-stack direction="block" gap="base">
-          {subscription && (
-            <s-box padding="base" borderWidth="base" borderRadius="base">
-              <s-stack direction="block" gap="base">
-                <s-text>Current Plan</s-text>
-                <s-text>{subscription.planName}</s-text>
-                {subscription.price > 0 ? (
-                  <s-text tone="neutral">${subscription.price}/month</s-text>
-                ) : (
-                  <s-text tone="neutral">Free</s-text>
-                )}
-                {subscription.createdAt && (
-                  <s-text tone="neutral">
-                    Since {new Date(subscription.createdAt).toLocaleDateString()}
-                  </s-text>
-                )}
-              </s-stack>
-            </s-box>
-          )}
-          
-          <s-button
-            variant="primary"
-            onClick={() => {
-              console.log('🔵 Upgrade Plan button clicked');
-              setShowBillingModal(true);
-            }}
-            disabled={billingFetcher.state === 'submitting'}
-          >
-            {billingFetcher.state === 'submitting' ? 'Loading...' : 'Upgrade Plan'}
-          </s-button>
-          
-          {subscription && subscription.price > 0 && (
-            <s-button
-              variant="secondary"
-              onClick={handleCancelSubscription}
-              disabled={billingCancelFetcher.state === 'submitting'}
-            >
-              {billingCancelFetcher.state === 'submitting' ? 'Cancelling...' : 'Cancel Subscription'}
-            </s-button>
-          )}
+          <s-paragraph>
+            Add the try-on button to your product pages so customers can see how items look on them before buying.
+          </s-paragraph>
+          <s-paragraph>
+            <strong>1. Go to Online Store</strong> → Themes
+          </s-paragraph>
+          <s-paragraph>
+            <strong>2. Click Customize</strong> on your active theme
+          </s-paragraph>
+          <s-paragraph>
+            <strong>3. Navigate to a Product page</strong>
+          </s-paragraph>
+          <s-paragraph>
+            <strong>4. Click Add app block</strong> and select "ATF - Try it on Button"
+          </s-paragraph>
         </s-stack>
       </s-section>
 
@@ -467,7 +638,7 @@ export default function Index() {
             <s-link href="/app/additional">View analytics</s-link>
           </s-paragraph>
           <s-paragraph>
-            <s-link href="mailto:support@aboutthefit.com" target="_blank">
+            <s-link href="https://www.revuapp.io/submit/cmguzyiw40001l1046f965l8a" target="_blank">
               Contact support
             </s-link>
           </s-paragraph>
@@ -517,7 +688,7 @@ export default function Index() {
               </button>
             </div>
             
-            <div style={{ display: 'grid', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
               {plans.map((plan) => (
                 <div
                   key={plan.key}
@@ -536,7 +707,7 @@ export default function Index() {
                   </div>
                   
                   <p style={{ color: '#666', marginBottom: '12px' }}>
-                    {plan.credits === -1 ? 'Unlimited' : `${plan.credits} credits/month`}
+                    {plan.credits === -1 ? 'Unlimited try-ons' : `${plan.credits} try-ons/month`}
                   </p>
                   
                   <ul style={{ listStyle: 'none', padding: 0, marginBottom: '16px' }}>

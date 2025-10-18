@@ -1,8 +1,7 @@
-import { TryOnStatus } from '@prisma/client';
 import type { TryOnRequestData, AIGenerationRequest } from '../types/tryon';
 import { virtualTryOnAI } from './ai.server';
 import { uploadResultImage } from './storage.server';
-import prisma from '../db.server';
+import prisma, { TryOnStatus } from '../db.server';
 
 /**
  * Create a new try-on request in the database
@@ -14,7 +13,7 @@ export async function createTryOnRequest(params: {
   productImage: string;
   userPhotoUrl: string;
   metadata?: Record<string, any>;
-}): Promise<TryOnRequestData> {
+}) {
   const request = await prisma.tryOnRequest.create({
     data: {
       shop: params.shop,
@@ -33,9 +32,7 @@ export async function createTryOnRequest(params: {
 /**
  * Get a try-on request by ID
  */
-export async function getTryOnRequest(
-  id: string
-): Promise<TryOnRequestData | null> {
+export async function getTryOnRequest(id: string) {
   const request = await prisma.tryOnRequest.findUnique({
     where: { id },
   });
@@ -53,7 +50,7 @@ export async function listTryOnRequests(
     limit?: number;
     offset?: number;
   } = {}
-): Promise<{ requests: TryOnRequestData[]; total: number }> {
+) {
   const where = {
     shop,
     ...(options.status && { status: options.status }),
@@ -83,7 +80,7 @@ export async function updateTryOnStatus(
     errorMessage?: string;
     metadata?: Record<string, any>;
   } = {}
-): Promise<TryOnRequestData> {
+) {
   const request = await prisma.tryOnRequest.update({
     where: { id },
     data: {
@@ -100,9 +97,7 @@ export async function updateTryOnStatus(
  * Process a try-on request
  * This is the main function that coordinates the entire try-on workflow
  */
-export async function processTryOnRequest(
-  requestId: string
-): Promise<TryOnRequestData> {
+export async function processTryOnRequest(requestId: string) {
   // Get the request
   const request = await getTryOnRequest(requestId);
   if (!request) {

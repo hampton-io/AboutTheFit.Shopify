@@ -17,6 +17,9 @@ export interface DashboardStats {
   totalTryOns: number;
   creditsUsed: number;
   creditsRemaining: number;
+  creditsLimit: number;
+  productLimit: number;
+  daysUntilReset: number;
 }
 
 /**
@@ -97,8 +100,32 @@ export async function toggleProductTryOn(
   productTitle: string,
   productImage: string,
   enabled: boolean
-): Promise<boolean> {
+): Promise<{ success: boolean; error?: string }> {
   try {
+    // If enabling, check product limits
+    if (enabled) {
+      const { hasProductLimitsExceeded } = await import('./billing.server');
+      const limitsCheck = await hasProductLimitsExceeded(shop);
+      
+      // Check if currently enabled
+      const currentSetting = await prisma.productTryOnSettings.findUnique({
+        where: {
+          shop_productId: {
+            shop,
+            productId,
+          },
+        },
+      });
+
+      // If product is not currently enabled and we're at the limit, block it
+      if ((!currentSetting || !currentSetting.tryOnEnabled) && limitsCheck.exceeded) {
+        return {
+          success: false,
+          error: `You've reached your product limit of ${limitsCheck.limit}. Upgrade your plan to enable more products.`,
+        };
+      }
+    }
+
     await prisma.productTryOnSettings.upsert({
       where: {
         shop_productId: {
@@ -120,10 +147,13 @@ export async function toggleProductTryOn(
       },
     });
 
-    return true;
+    return { success: true };
   } catch (error) {
     console.error('Error toggling product try-on:', error);
-    return false;
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
   }
 }
 
@@ -142,14 +172,14 @@ export async function bulkToggleProductTryOn(
   try {
     let count = 0;
     for (const product of products) {
-      const success = await toggleProductTryOn(
+      const result = await toggleProductTryOn(
         shop,
         product.productId,
         product.productTitle,
         product.productImage,
         enabled
       );
-      if (success) count++;
+      if (result.success) count++;
     }
     return count;
   } catch (error) {
@@ -165,6 +195,11 @@ export async function getDashboardStats(
   admin: AdminApiContext,
   shop: string
 ): Promise<DashboardStats> {
+  const { checkAndResetMonthlyLimits } = await import('./billing.server');
+  
+  // Check and reset monthly limits if needed
+  await checkAndResetMonthlyLimits(shop);
+
   // Get total products from Shopify
   const { products } = await searchProducts(admin, { first: 1 });
   // Note: This is a simplified count, in production you'd use a dedicated count query
@@ -182,20 +217,40 @@ export async function getDashboardStats(
     where: { shop },
   });
 
-  // Get credit info
+  // Get metadata and calculate limits
   const metadata = await prisma.appMetadata.findUnique({
     where: { shop },
   });
 
   const creditsUsed = metadata?.creditsUsed || 0;
   const creditsLimit = metadata?.creditsLimit || 10;
+  
+  // Calculate days until reset
+  const lastResetDate = metadata?.lastResetDate || new Date();
+  const now = new Date();
+  const daysSinceReset = Math.floor((now.getTime() - lastResetDate.getTime()) / (1000 * 60 * 60 * 24));
+  const daysUntilReset = Math.max(0, 30 - daysSinceReset);
+
+  // Get product limit from billing plans
+  const PLANS = {
+    FREE: { credits: 50, productLimit: 3 },
+    SIDE_HUSSL: { credits: 500, productLimit: 100 },
+    BUSINESS: { credits: 10000, productLimit: -1 },
+    ALL_IN: { credits: -1, productLimit: -1 },
+  };
+
+  const planEntry = Object.values(PLANS).find(p => p.credits === creditsLimit);
+  const productLimit = planEntry?.productLimit || 3;
 
   return {
     totalProducts: products.length, // This is simplified, should be actual count
     productsWithTryOn,
     totalTryOns,
     creditsUsed,
-    creditsRemaining: Math.max(0, creditsLimit - creditsUsed),
+    creditsRemaining: creditsLimit === -1 ? -1 : Math.max(0, creditsLimit - creditsUsed),
+    creditsLimit,
+    productLimit,
+    daysUntilReset,
   };
 }
 
