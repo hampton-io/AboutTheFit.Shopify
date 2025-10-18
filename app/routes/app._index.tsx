@@ -350,6 +350,18 @@ export default function Index() {
                     )}
                   </>
                 )}
+                <div style={{ 
+                  marginTop: '8px',
+                  paddingTop: '8px',
+                  borderTop: '1px solid #E5E7EB',
+                  fontSize: '12px',
+                  color: '#6B7280',
+                  fontStyle: 'italic'
+                }}>
+                  {stats.creditsLimit === -1 
+                    ? 'Note: The "Try it On" button is always available to customers'
+                    : 'Note: The "Try it On" button will not appear to customers when your allowance is used'}
+                </div>
               </s-stack>
             </s-box>
 
