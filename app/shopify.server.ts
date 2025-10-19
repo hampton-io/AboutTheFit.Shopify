@@ -23,6 +23,23 @@ const getAppUrl = () => {
   return process.env.HOST || "http://localhost:3000";
 };
 
+// Parse explicit custom domain allow/mapping list for safer handling
+function parseCustomDomains(): string[] {
+  const single = process.env.SHOP_CUSTOM_DOMAIN;
+  const csv = process.env.SHOP_CUSTOM_DOMAINS; // comma-separated list
+  const mapCsv = process.env.SHOP_DOMAIN_MAP; // format: custom=shop.myshopify.com,custom2=shop2.myshopify.com
+  const fromMap = (mapCsv || "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => p.split("=")[0]?.trim())
+    .filter(Boolean) as string[];
+  const list = [single, ...(csv ? csv.split(",") : []), ...fromMap]
+    .filter(Boolean)
+    .map((d) => d!.toLowerCase());
+  return Array.from(new Set(list));
+}
+
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
@@ -32,8 +49,8 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
-  ...(process.env.SHOP_CUSTOM_DOMAIN
-    ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
+  ...(parseCustomDomains().length
+    ? { customShopDomains: parseCustomDomains() }
     : {}),
 });
 

@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, Form, useLoaderData, Link } from "react-router";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { login } from "../../shopify.server";
 
@@ -19,24 +19,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function App() {
   const { showForm } = useLoaderData<typeof loader>();
   const [shopError, setShopError] = useState("");
+  const [showHelp, setShowHelp] = useState(false);
+  const heroRef = useRef<HTMLDivElement>(null);
 
   const validateShopDomain = (value: string) => {
-    // Remove whitespace
-    const trimmedValue = value.trim();
-    
-    // Check if empty
-    if (!trimmedValue) {
-      return "Please enter your shop domain";
-    }
-    
-    // Check if it matches the Shopify store pattern
-    const shopifyPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
-    
-    if (!shopifyPattern.test(trimmedValue)) {
-      return "Please enter a valid Shopify store URL (e.g., your-store.myshopify.com)";
-    }
-    
-    return "";
+    const trimmed = value.trim();
+    if (!trimmed) return "Please enter your shop domain";
+    const isMyshopify = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/i.test(trimmed);
+    setShowHelp(!isMyshopify);
+    if (isMyshopify) return "";
+    return "Please enter your .myshopify.com domain";
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -58,20 +50,69 @@ export default function App() {
     if (shopError) {
       setShopError("");
     }
+    // Toggle help visibility live
+    const value = e.currentTarget.value;
+    const isMyshopify = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/i.test(value.trim());
+    setShowHelp(Boolean(value) && !isMyshopify);
   };
+
+  useEffect(() => {
+    const container = heroRef.current;
+    if (!container) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      const r = container.getBoundingClientRect();
+      const mx = (e.clientX - r.left) / r.width - 0.5;
+      const my = (e.clientY - r.top) / r.height - 0.5;
+      const dx = mx * 10;
+      const dy = my * 8;
+      container.querySelectorAll(`.${styles.brandAccent}`).forEach((el) => {
+        (el as HTMLElement).style.setProperty("--dx", `${dx}px`);
+        (el as HTMLElement).style.setProperty("--dy", `${dy}px`);
+      });
+    };
+
+    const handleLeave = () => {
+      container.querySelectorAll(`.${styles.brandAccent}`).forEach((el) => {
+        (el as HTMLElement).style.setProperty("--dx", `0px`);
+        (el as HTMLElement).style.setProperty("--dy", `0px`);
+      });
+    };
+
+    container.addEventListener("pointermove", handlePointerMove);
+    container.addEventListener("pointerleave", handleLeave);
+
+    return () => {
+      container.removeEventListener("pointermove", handlePointerMove);
+      container.removeEventListener("pointerleave", handleLeave);
+    };
+  }, []);
 
   return (
     <div className={styles.index}>
-      <div className={styles.hero}>
+      <div className={styles.hero} ref={heroRef}>
         <div className={styles.content}>
           <div className={styles.badge}>🚀 About The Fit - AI Virtual Try-On</div>
           <h1 className={styles.heading}>
-            Turn Browsers Into Buyers with <span className={styles.brandHighlight} data-text="About The Fit">About The Fit</span>
+            Turn Browsers Into Buyers with <span className={styles.brandAccent}>About The Fit</span>
           </h1>
           <p className={styles.subheading}>
             Reduce returns by 40% and increase conversions by 3x. Let customers see 
-            themselves in your products before they buy. Powered by <span className={styles.brandHighlight} data-text="About The Fit">About The Fit</span>'s cutting-edge AI.
+            themselves in your products before they buy. Powered by <span className={styles.brandAccent}>About The Fit</span>'s cutting-edge AI.
           </p>
+          
+          <div className={styles.videoWrap}>
+            <div className={styles.videoContainer}>
+              <iframe
+                className={styles.videoIframe}
+                src="https://www.youtube-nocookie.com/embed/FI1-iLFfhPk?rel=0&modestbranding=1&showinfo=0"
+                title="About The Fit demo"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+          </div>
           
           {showForm && (
             <Form className={styles.form} method="post" action="/auth/login" onSubmit={handleSubmit}>
@@ -82,8 +123,7 @@ export default function App() {
                   name="shop" 
                   placeholder="your-store.myshopify.com"
                   onChange={handleInputChange}
-                  pattern="[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com"
-                  title="Enter your Shopify store URL (e.g., your-store.myshopify.com)"
+                  title="Enter your Shopify store domain (e.g., your-store.myshopify.com)"
                   required
                 />
                 <button className={styles.ctaButton} type="submit">
@@ -91,6 +131,17 @@ export default function App() {
                 </button>
               </div>
               {shopError && <p className={styles.formError}>{shopError}</p>}
+              {showHelp && !shopError && (
+                <div className={styles.formHelp}>
+                  <div className={styles.formHelpTitle}>Find your .myshopify.com URL</div>
+                  <ol className={styles.formHelpList}>
+                    <li>In Shopify admin, go to <strong>Settings → Domains</strong>.</li>
+                    <li>Find the domain that contains <code>.myshopify.com</code> and copy it (e.g. <code>your-store.myshopify.com</code>).</li>
+                    <li>Paste that value here.</li>
+                  </ol>
+                  <div className={styles.formHelpHint}>Or install via the Shopify App Store: <a href="https://apps.shopify.com/search?q=About%20The%20Fit" target="_blank" rel="noopener noreferrer">search for “About The Fit”</a>.</div>
+                </div>
+              )}
               <p className={styles.formHint}>
                 ✓ No credit card required ✓ 14-day free trial ✓ Setup in 2 minutes
               </p>
@@ -215,7 +266,7 @@ export default function App() {
           </h2>
           <p className={styles.ctaText}>
             Join hundreds of fashion merchants who've boosted sales and slashed returns 
-            with <span className={styles.brandHighlight} data-text="About The Fit">About The Fit</span>'s AI-powered virtual try-on.
+            with <span className={styles.brandAccent}>About The Fit</span>'s AI-powered virtual try-on.
           </p>
           
           {showForm && (
@@ -227,8 +278,7 @@ export default function App() {
                   name="shop" 
                   placeholder="your-store.myshopify.com"
                   onChange={handleInputChange}
-                  pattern="[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com"
-                  title="Enter your Shopify store URL (e.g., your-store.myshopify.com)"
+                  title="Enter your Shopify store domain (e.g., your-store.myshopify.com)"
                   required
                 />
                 <button className={styles.ctaButton} type="submit">
