@@ -1,6 +1,25 @@
 import { authenticate } from '../shopify.server';
 import prisma from '../db.server';
 
+// Get app URL - auto-detect from Vercel or use explicit setting
+function getAppUrl(): string {
+  if (process.env.SHOPIFY_APP_URL) {
+    return process.env.SHOPIFY_APP_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return process.env.HOST || 'http://localhost:3000';
+}
+
+// Check if we're in development mode
+function isDevelopmentMode(): boolean {
+  // We're in development if NODE_ENV is explicitly 'development' 
+  // OR if neither VERCEL_URL nor SHOPIFY_APP_URL is set (local dev)
+  return process.env.NODE_ENV === 'development' || 
+         (!process.env.VERCEL_URL && !process.env.SHOPIFY_APP_URL);
+}
+
 // Define pricing plans based on credit system
 const PLANS = {
   FREE: {
@@ -62,12 +81,13 @@ export async function createSubscription(
   }
 
   try {
-    console.log('🔧 SHOPIFY_APP_URL:', process.env.SHOPIFY_APP_URL);
-    const returnUrl = `${process.env.SHOPIFY_APP_URL || 'https://example.com'}/api/billing/confirm?shop=${session.shop}&plan=${planKey}`;
+    const appUrl = getAppUrl();
+    console.log('🔧 App URL:', appUrl);
+    const returnUrl = `${appUrl}/api/billing/confirm?shop=${session.shop}&plan=${planKey}`;
     console.log('🔗 Return URL:', returnUrl);
     
     // Check if we're in development mode
-    const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.SHOPIFY_APP_URL;
+    const isDevelopment = isDevelopmentMode();
     
     if (isDevelopment) {
       console.log('🧪 Development mode: Simulating billing approval');
@@ -247,7 +267,7 @@ export async function getSubscriptionStatus(request: Request) {
   const { admin, session } = await authenticate.admin(request);
 
   // In development mode, always check our database first
-  const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.SHOPIFY_APP_URL;
+  const isDevelopment = isDevelopmentMode();
   
   if (isDevelopment) {
     console.log('🧪 Development mode: Checking database for subscription');
