@@ -22,18 +22,19 @@ export interface TryOnResponse {
   resultImage?: string;
   error?: string;
   analysisText?: string; // For text-only responses
+  code?: 'NO_IMAGE' | 'TEXT_ONLY' | 'GENERATION_ERROR' | 'INVALID_INPUT';
 }
 
 export class VirtualTryOnAI {
   private model: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   constructor() {
-    // Initialize Gemini model with API key
+    // Initialize Gemini model with API keyp
     // Using gemini-2.5-flash-image for image generation
     this.model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash-image',
       generationConfig: {
-        temperature: 0.3,    // Lower temperature for more consistent results
+        temperature: 0.56,    // Lower temperature for more consistent results
         maxOutputTokens: 2000, // Increased for more detailed responses
         topP: 0.8,           // Focus on most likely tokens
         topK: 20,            // Limit vocabulary for consistency
@@ -140,13 +141,9 @@ Remember: This is NOT a recreation or approximation - it's the EXACT same person
                 
                 const resultImage = `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
                 
-                // Validate the generated image for likeness preservation
-                const validationResult = await this.validateGeneratedImage(request.userPhoto, resultImage);
-                
                 return {
                   success: true,
                   resultImage,
-                  analysisText: validationResult.message,
                 };
               }
 
@@ -157,6 +154,7 @@ Remember: This is NOT a recreation or approximation - it's the EXACT same person
                   success: false,
                   error: 'No image generated - received text response instead',
                   analysisText: part.text,
+                  code: 'TEXT_ONLY',
                 };
               }
             }
@@ -173,13 +171,15 @@ Remember: This is NOT a recreation or approximation - it's the EXACT same person
 
       return {
         success: false,
-        error: 'No image generated. Please check the API response format.',
+        error: 'The AI did not return an image. Please try again.',
+        code: 'NO_IMAGE',
       };
     } catch (error) {
       console.error('Error generating try-on:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
+        code: 'GENERATION_ERROR',
       };
     }
   }
@@ -254,86 +254,7 @@ Remember: This is NOT a recreation or approximation - it's the EXACT same person
 //   }
 
 
-  /**
-   * Validate generated image for likeness preservation
-   */
-  async validateGeneratedImage(originalPhoto: string, generatedImage: string): Promise<{
-    isValid: boolean;
-    message: string;
-  }> {
-    try {
-      const originalImageData = await this.convertImageToGenerativePart(originalPhoto);
-      const generatedImageData = await this.convertImageToGenerativePart(generatedImage);
-
-      const prompt = `
-Compare these two images and evaluate if the generated image (Image 2) successfully preserves the identity of the person from the original image (Image 1).
-
-EVALUATION CRITERIA:
-1. **Facial Features**: Are the eyes, nose, mouth, and facial structure identical?
-2. **Identity Consistency**: Is it clearly the same person across all four poses in the grid?
-3. **Body Characteristics**: Are proportions, skin tone, and body type preserved?
-4. **Photographic Quality**: Is the lighting, background, and image quality consistent?
-
-Respond with: SUCCESS or FAILURE, followed by detailed analysis of what was preserved well and what needs improvement.
-`;
-
-      const result = await this.model.generateContent([prompt, originalImageData, generatedImageData]);
-      const response = await result.response;
-      const text = response.text();
-
-      const isValid = text.toLowerCase().includes('success');
-      return {
-        isValid,
-        message: text,
-      };
-    } catch (error) {
-      console.error('Error validating generated image:', error);
-      return {
-        isValid: true, // Default to valid if validation fails
-        message: 'Image validation failed - proceeding with generated result',
-      };
-    }
-  }
-
-  /**
-   * Validate if an uploaded image is suitable for try-on
-   */
-  async validateUserPhoto(photoUrl: string): Promise<{
-    isValid: boolean;
-    message?: string;
-  }> {
-    try {
-      const imageData = await this.convertImageToGenerativePart(photoUrl);
-
-      const prompt = `
-Analyze this photo and determine if it's suitable for virtual try-on.
-Requirements:
-- Must contain exactly one person
-- Person should be clearly visible
-- Front-facing or slightly angled view is best
-- Full upper body should be visible
-- Good lighting quality
-
-Respond with: VALID or INVALID, followed by a brief reason.
-`;
-
-      const result = await this.model.generateContent([prompt, imageData]);
-      const response = await result.response;
-      const text = response.text();
-
-      const isValid = text.toLowerCase().includes('valid');
-      return {
-        isValid,
-        message: text,
-      };
-    } catch (error) {
-      console.error('Error validating photo:', error);
-      return {
-        isValid: false,
-        message: 'Failed to validate photo',
-      };
-    }
-  }
+  // (Removed) validateGeneratedImage and validateUserPhoto utilities to reduce latency and cost
 }
 
 // Export a singleton instance

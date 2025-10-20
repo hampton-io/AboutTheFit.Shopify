@@ -85,23 +85,30 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     console.log('✅ AI result:', aiResult.success ? 'Success!' : 'Failed');
 
     if (!aiResult.success || !aiResult.resultImage) {
-      // Update request to FAILED status
+      // Update request to FAILED status (do NOT increment credits on failure)
       await updateTryOnStatus(tryOnRequest.id, TryOnStatus.FAILED, {
         errorMessage: aiResult.error || 'Failed to generate try-on',
         metadata: {
-          ...tryOnRequest.metadata as Record<string, any>,
+          ...(tryOnRequest.metadata as Record<string, any>),
           failedAt: new Date().toISOString(),
+          aiCode: aiResult.code || 'GENERATION_ERROR',
         },
       });
 
-      console.log('❌ Try-on request marked as FAILED');
+      console.log('❌ Try-on failed without image; credits not charged');
 
+      // Return 200 with retryable signal for storefront UX to handle gracefully
       return Response.json(
         {
           success: false,
-          error: aiResult.error || 'Failed to generate try-on',
+          retryable: true,
+          code: aiResult.code || 'GENERATION_ERROR',
+          error:
+            aiResult.error ||
+            'Our AI did not return an image this time. Please try again.',
+          analysisText: aiResult.analysisText || null,
         },
-        { status: 500 }
+        { status: 200 }
       );
     }
 

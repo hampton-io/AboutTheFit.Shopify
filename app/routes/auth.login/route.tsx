@@ -103,7 +103,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const input = (formData.get("shop") as string | null)?.trim() || "";
 
-  if (input && !isMyshopifyDomain(input)) {
+  // Always redirect to GET with ?shop=... so the loader handles initiating OAuth.
+  // This avoids re-using the consumed request body inside Shopify's login handler.
+  if (!input) {
+    // Let Shopify surface the missing shop error via the loader flow
+    return redirect(`/auth/login`);
+  }
+
+  if (!isMyshopifyDomain(input)) {
     const resolved = await resolveCustomDomainToMyshopify(input);
     if (resolved) {
       return redirect(`/auth/login?shop=${encodeURIComponent(resolved)}`);
@@ -111,10 +118,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return { errors: { shop: "Couldn’t detect the Shopify domain for that URL. Please enter your .myshopify.com domain." } } as any;
   }
 
-  const loginResponse = await login(request);
-  if (loginResponse instanceof Response) return loginResponse;
-  const errors = loginErrorMessage(loginResponse);
-  return { errors };
+  // Input is already a .myshopify.com domain; send it via query param
+  return redirect(`/auth/login?shop=${encodeURIComponent(input)}`);
 };
 
 export default function Auth() {

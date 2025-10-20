@@ -384,6 +384,12 @@
     if (savedPhoto) {
       window['tryOnPhoto_{{ block.id }}'] = savedPhoto;
     }
+
+    // Cache loading step template for reuse (retry flow)
+    const step2El = document.getElementById('modal-step-2-{{ block.id }}');
+    if (step2El) {
+      window['loadingTemplate_{{ block.id }}'] = step2El.innerHTML;
+    }
   });
 
   // Open modal with animation
@@ -517,6 +523,10 @@
     
     setTimeout(() => {
       step1.style.display = 'none';
+      // Ensure loading UI is restored (in case step2 was showing an error state)
+      if (window['loadingTemplate_' + blockId]) {
+        step2.innerHTML = window['loadingTemplate_' + blockId];
+      }
       step2.style.display = 'block';
       step2.style.animation = 'fadeIn 0.3s ease-out';
       
@@ -737,13 +747,111 @@
           step3.style.animation = 'fadeIn 0.3s ease-out';
         }, 300);
       } else {
-        throw new Error(data.error || 'Failed to generate try-on');
+        stopLoadingMessages(blockId);
+        const message = (data && data.error) ? data.error : 'We couldn’t create your try-on this time.';
+        const retryable = !!(data && data.retryable);
+        showErrorState(blockId, message, {
+          retryable,
+          onRetry: () => {
+            resetLoadingState(blockId);
+            startLoadingMessages(blockId);
+            generateTryOn(blockId, productId, productTitle, productImage);
+          },
+          onChangePhoto: () => {
+            const step1 = document.getElementById('modal-step-1-' + blockId);
+            const step2 = document.getElementById('modal-step-2-' + blockId);
+            const header = document.getElementById('modal-header-' + blockId);
+            step2.style.display = 'none';
+            step1.style.display = 'block';
+            header.style.display = 'flex';
+          },
+          analysisText: data && data.analysisText
+        });
+        return;
       }
     } catch (error) {
       console.error('❌ Error:', error);
       stopLoadingMessages(blockId);
-      showNotification('Something went wrong. Please try again.', 'error');
-      closeTryOnModal(blockId);
+      showErrorState(blockId, 'Something went wrong. Please try again.', {
+        retryable: true,
+        onRetry: () => {
+          resetLoadingState(blockId);
+          startLoadingMessages(blockId);
+          generateTryOn(blockId, productId, productTitle, productImage);
+        },
+        onChangePhoto: () => {
+          const step1 = document.getElementById('modal-step-1-' + blockId);
+          const step2 = document.getElementById('modal-step-2-' + blockId);
+          const header = document.getElementById('modal-header-' + blockId);
+          step2.style.display = 'none';
+          step1.style.display = 'block';
+          header.style.display = 'flex';
+        }
+      });
+    }
+  }
+  // Restore loading UI in step 2 from cached template
+  function resetLoadingState(blockId) {
+    const step2 = document.getElementById('modal-step-2-' + blockId);
+    const modalContent = document.getElementById('modal-content-' + blockId);
+    const header = document.getElementById('modal-header-' + blockId);
+    if (step2 && window['loadingTemplate_' + blockId]) {
+      step2.innerHTML = window['loadingTemplate_' + blockId];
+    }
+    // Compact modal for loading and hide header
+    modalContent.style.maxWidth = '380px';
+    modalContent.style.padding = '0';
+    header.style.display = 'none';
+    const step1 = document.getElementById('modal-step-1-' + blockId);
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+  }
+
+  // Inline error state inside modal
+  function showErrorState(blockId, message, options) {
+    const step2 = document.getElementById('modal-step-2-' + blockId);
+    const step1 = document.getElementById('modal-step-1-' + blockId);
+    const header = document.getElementById('modal-header-' + blockId);
+    const modalContent = document.getElementById('modal-content-' + blockId);
+    if (!step2) return;
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+    header.style.display = 'flex';
+    modalContent.style.maxWidth = '500px';
+    modalContent.style.padding = '32px';
+
+    // Build error card
+    step2.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.style.textAlign = 'center';
+    wrap.style.padding = '12px 4px 0';
+    wrap.innerHTML = `
+      <div style="margin-bottom: 16px;">
+        <div style="width: 44px; height: 44px; margin: 0 auto 8px; border-radius: 50%; background: #fff2f2; display:flex; align-items:center; justify-content:center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
+        </div>
+        <div style="font-weight:600; font-size:16px; color:#111;">We couldn’t create your try-on</div>
+        <div style="font-size:13px; color:#666; margin-top:6px;">${message || ''}</div>
+        <div style="font-size:13px; color:#666; margin-top:8px;">AI models don’t work well with every photo (e.g., low resolution, extreme angles, face is obscured, or heavy filters). Please try a different image.</div>
+        ${options && options.analysisText ? `<details style="margin-top:10px; text-align:left;"><summary style="cursor:pointer; font-size:13px; color:#444;">Why this didn’t work</summary><div style="font-size:12px; color:#666; margin-top:6px; white-space:pre-wrap;">${options.analysisText.replace(/</g,'&lt;')}</div></details>` : ''}
+      </div>
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
+        <button id="atf-retry" style="background:#000; color:#fff; border:none; border-radius:10px; padding:12px 14px; font-weight:600; cursor:pointer;">Try again</button>
+        <button id="atf-change" style="background:#fff; color:#111; border:1px solid #e5e5e5; border-radius:10px; padding:12px 14px; font-weight:600; cursor:pointer;">Change photo</button>
+      </div>
+      <div style="font-size:12px; color:#999; margin-top:10px;">Tip: Use a clear, front-facing photo in good lighting. Avoid sunglasses, heavy filters, or extreme angles.</div>
+    `;
+    step2.appendChild(wrap);
+
+    const retryBtn = wrap.querySelector('#atf-retry');
+    const changeBtn = wrap.querySelector('#atf-change');
+    if (retryBtn && options && options.retryable && typeof options.onRetry === 'function') {
+      retryBtn.addEventListener('click', options.onRetry);
+    } else if (retryBtn) {
+      retryBtn.style.display = 'none';
+    }
+    if (changeBtn && options && typeof options.onChangePhoto === 'function') {
+      changeBtn.addEventListener('click', options.onChangePhoto);
     }
   }
   
@@ -781,9 +889,102 @@
     }
   }
   
-  // Show notification (simple version)
-  function showNotification(message, type) {
-    alert(message);
+  // Show notification (toast banner)
+  function showNotification(message, type, options) {
+    try {
+      const id = 'atf-toast';
+      let toast = document.getElementById(id);
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = id;
+        toast.style.position = 'fixed';
+        toast.style.top = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.zIndex = '2147483647';
+        toast.style.maxWidth = '520px';
+        toast.style.width = 'calc(100% - 32px)';
+        toast.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
+        toast.style.borderRadius = '12px';
+        toast.style.padding = '12px 16px';
+        toast.style.display = 'flex';
+        toast.style.alignItems = 'center';
+        toast.style.gap = '12px';
+        toast.style.background = '#fff';
+        toast.style.border = '1px solid #eee';
+
+        const text = document.createElement('div');
+        text.id = 'atf-toast-text';
+        text.style.flex = '1';
+        text.style.fontSize = '14px';
+        text.style.color = '#111';
+        toast.appendChild(text);
+
+        const actionBtn = document.createElement('button');
+        actionBtn.id = 'atf-toast-action';
+        actionBtn.style.background = '#000';
+        actionBtn.style.color = '#fff';
+        actionBtn.style.border = 'none';
+        actionBtn.style.borderRadius = '8px';
+        actionBtn.style.padding = '8px 12px';
+        actionBtn.style.fontSize = '13px';
+        actionBtn.style.fontWeight = '600';
+        actionBtn.style.cursor = 'pointer';
+        actionBtn.style.display = 'none';
+        toast.appendChild(actionBtn);
+
+        const close = document.createElement('button');
+        close.innerHTML = '×';
+        close.setAttribute('aria-label', 'Close');
+        close.style.background = 'transparent';
+        close.style.border = 'none';
+        close.style.fontSize = '18px';
+        close.style.cursor = 'pointer';
+        close.onclick = () => toast.remove();
+        toast.appendChild(close);
+
+        document.body.appendChild(toast);
+      }
+
+      const textNode = document.getElementById('atf-toast-text');
+      const actionBtn = document.getElementById('atf-toast-action');
+      if (textNode) textNode.textContent = String(message || '');
+
+      // Style per type
+      if (type === 'error') {
+        toast.style.borderColor = '#ffd3d6';
+        toast.style.background = '#fff9f9';
+      } else if (type === 'success') {
+        toast.style.borderColor = '#d3ffe6';
+        toast.style.background = '#f6fffb';
+      } else {
+        toast.style.borderColor = '#eee';
+        toast.style.background = '#fff';
+      }
+
+      // Optional action
+      if (options && options.actionLabel && typeof options.onAction === 'function') {
+        actionBtn.textContent = options.actionLabel;
+        actionBtn.onclick = options.onAction;
+        actionBtn.style.display = 'inline-block';
+      } else if (actionBtn) {
+        actionBtn.style.display = 'none';
+      }
+
+      // Auto hide
+      const duration = (options && options.duration) ? options.duration : 6000;
+      if (duration > 0) {
+        setTimeout(() => {
+          if (toast && toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+          }
+        }, duration);
+      }
+    } catch (e) {
+      // As a last resort, fall back to alert
+      // eslint-disable-next-line no-alert
+      alert(message);
+    }
   }
   
   // Download image
@@ -797,7 +998,7 @@
       document.body.removeChild(link);
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Download failed. Please try right-clicking the image and saving manually.');
+      showNotification('Download failed. Please try right-clicking the image and saving manually.', 'error');
     }
   }
   
@@ -818,7 +1019,7 @@
         });
       } else {
         // Fallback: copy to clipboard or show message
-        alert('Sharing is not supported on this device. Use the Save button to download the image.');
+        showNotification('Sharing is not supported on this device. Use the Save button to download the image.', 'error');
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
