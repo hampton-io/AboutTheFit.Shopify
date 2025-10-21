@@ -30,13 +30,15 @@
 </div>
 
 <!-- Try-On Modal -->
-<div id="try-on-modal-{{ block.id }}" class="try-on-modal" style="display: none;">
+<div id="try-on-modal-{{ block.id }}" class="try-on-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2147483646; pointer-events: auto;">
   <div class="try-on-modal-overlay" style="
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(8px);
     z-index: 2147483646;
@@ -47,7 +49,7 @@
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) !important;
     background: white;
     padding: 32px;
     border-radius: 20px;
@@ -277,6 +279,34 @@
 </div>
 
 <style>
+  /* Critical: Ensure modal breaks out of any parent constraints */
+  .try-on-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 2147483646 !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    overflow: visible !important;
+  }
+
+  .try-on-modal[style*="display: none"] {
+    display: none !important;
+  }
+
+  .try-on-modal[style*="display: block"] {
+    display: block !important;
+  }
+
+  .try-on-modal * {
+    box-sizing: border-box;
+  }
+
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -348,6 +378,13 @@
     const productId = '{{ product.id }}';
     const shop = '{{ shop.permanent_domain }}';
     const isThemeEditor = {{ request.design_mode | json }};
+    
+    // CRITICAL FIX: Move modal to body to prevent layout constraints
+    const modal = document.getElementById('try-on-modal-{{ block.id }}');
+    if (modal && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+      console.log('✅ Modal moved to body element to prevent layout constraints');
+    }
     
     // Always show button in theme editor for preview
     if (isThemeEditor) {
@@ -830,16 +867,14 @@
         <div style="width: 44px; height: 44px; margin: 0 auto 8px; border-radius: 50%; background: #fff2f2; display:flex; align-items:center; justify-content:center;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
         </div>
-        <div style="font-weight:600; font-size:16px; color:#111;">We couldn’t create your try-on</div>
-        <div style="font-size:13px; color:#666; margin-top:6px;">${message || ''}</div>
-        <div style="font-size:13px; color:#666; margin-top:8px;">AI models don’t work well with every photo (e.g., low resolution, extreme angles, face is obscured, or heavy filters). Please try a different image.</div>
-        ${options && options.analysisText ? `<details style="margin-top:10px; text-align:left;"><summary style="cursor:pointer; font-size:13px; color:#444;">Why this didn’t work</summary><div style="font-size:12px; color:#666; margin-top:6px; white-space:pre-wrap;">${options.analysisText.replace(/</g,'&lt;')}</div></details>` : ''}
+        <div style="font-weight:600; font-size:16px; color:#111; margin-bottom:8px;">We couldn't create your try-on</div>
+        <div style="font-size:14px; color:#666; margin-bottom:12px;">This can happen with certain photos. Please try again.</div>
+        <div style="font-size:12px; color:#999; background:#fafafa; padding:12px; border-radius:8px;">💡 Tip: Use a clear, front-facing photo in good lighting. Avoid sunglasses, heavy filters, or extreme angles.</div>
       </div>
-      <div style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
-        <button id="atf-retry" style="background:#000; color:#fff; border:none; border-radius:10px; padding:12px 14px; font-weight:600; cursor:pointer;">Try again</button>
-        <button id="atf-change" style="background:#fff; color:#111; border:1px solid #e5e5e5; border-radius:10px; padding:12px 14px; font-weight:600; cursor:pointer;">Change photo</button>
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:16px;">
+        <button id="atf-retry" style="background:#000; color:#fff; border:none; border-radius:10px; padding:14px 20px; font-weight:600; cursor:pointer; font-size:14px;">Try again</button>
+        <button id="atf-change" style="background:#fff; color:#111; border:1px solid #e5e5e5; border-radius:10px; padding:14px 20px; font-weight:600; cursor:pointer; font-size:14px;">Change photo</button>
       </div>
-      <div style="font-size:12px; color:#999; margin-top:10px;">Tip: Use a clear, front-facing photo in good lighting. Avoid sunglasses, heavy filters, or extreme angles.</div>
     `;
     step2.appendChild(wrap);
 

@@ -244,9 +244,14 @@ Remember: This is NOT a recreation or approximation - it's the EXACT same person
       };
     } catch (error) {
       console.error('Error generating try-on:', error);
+      
+      // Log the full error for debugging but return a user-friendly message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Full error details:', errorMessage);
+      
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: 'We couldn\'t generate your try-on right now. Please try again.',
         code: 'GENERATION_ERROR',
       };
     }

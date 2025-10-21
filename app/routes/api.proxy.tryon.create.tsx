@@ -98,14 +98,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       console.log('❌ Try-on failed without image; credits not charged');
 
       // Return 200 with retryable signal for storefront UX to handle gracefully
+      // Use a friendly, generic message to avoid exposing technical details
       return Response.json(
         {
           success: false,
           retryable: true,
           code: aiResult.code || 'GENERATION_ERROR',
-          error:
-            aiResult.error ||
-            'Our AI did not return an image this time. Please try again.',
+          error: 'We couldn\'t create your try-on right now. Please try again.',
           analysisText: aiResult.analysisText || null,
         },
         { status: 200 }
@@ -134,10 +133,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
   } catch (error) {
     console.error('❌ Error in try-on creation:', error);
+    // Log full error for debugging
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Full error details:', errorMessage);
+    
     return Response.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        retryable: true,
+        error: 'Something went wrong. Please try again.',
       },
       { status: 500 }
     );
