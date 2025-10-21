@@ -29,15 +29,16 @@ export class VirtualTryOnAI {
   private model: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   constructor() {
-    // Initialize Gemini model with API keyp
+    // Initialize Gemini model with API key
     // Using gemini-2.5-flash-image for image generation
     this.model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash-image',
       generationConfig: {
-        temperature: 0.56,    // Lower temperature for more consistent results
-        maxOutputTokens: 2000, // Increased for more detailed responses
-        topP: 0.8,           // Focus on most likely tokens
-        topK: 20,            // Limit vocabulary for consistency
+        temperature: 0.4,      // Lower temperature for more consistent image output
+        maxOutputTokens: 8192, // Maximum allowed for image generation
+        topP: 0.95,            // Slightly higher for better image quality
+        topK: 40,              // Standard value for image generation
+        candidateCount: 1,     // Ensure single, focused output
       },
       safetySettings: [
         {
@@ -47,14 +48,71 @@ export class VirtualTryOnAI {
         {
           category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, 
           threshold: HarmBlockThreshold.BLOCK_NONE
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.BLOCK_NONE
         }
       ]
     });
   }
 
   async generateTryOn(request: TryOnRequest): Promise<TryOnResponse> {
+    const maxRetries = 3;
+    let lastError: TryOnResponse | null = null;
+
+    // Retry up to maxRetries times if we get text instead of image
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`AI mode: Generating virtual try-on with Gemini (attempt ${attempt}/${maxRetries})...`);
+        
+        const result = await this.generateTryOnAttempt(request);
+        
+        // If successful, return immediately
+        if (result.success) {
+          console.log(`✅ Successfully generated image on attempt ${attempt}`);
+          return result;
+        }
+        
+        // If it's a text-only response and we have retries left, try again
+        if (result.code === 'TEXT_ONLY' && attempt < maxRetries) {
+          console.log(`⚠️  Received text instead of image on attempt ${attempt}. Retrying...`);
+          lastError = result;
+          // Wait a bit before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          continue;
+        }
+        
+        // For other errors or last attempt, return the error
+        return result;
+      } catch (error) {
+        console.error(`Error on attempt ${attempt}:`, error);
+        if (attempt === maxRetries) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred',
+            code: 'GENERATION_ERROR',
+          };
+        }
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+    
+    // Should not reach here, but return last error if it does
+    return lastError || {
+      success: false,
+      error: 'Failed to generate image after multiple attempts',
+      code: 'GENERATION_ERROR',
+    };
+  }
+
+  private async generateTryOnAttempt(request: TryOnRequest): Promise<TryOnResponse> {
     try {
-      console.log('AI mode: Generating virtual try-on with Gemini...');
 
       // Convert images to the format expected by Gemini
       const userPhotoData = await this.convertImageToGenerativePart(
@@ -65,6 +123,8 @@ export class VirtualTryOnAI {
       );
 
       const prompt = `
+⚠️ CRITICAL: You MUST generate an IMAGE as output. DO NOT return text descriptions or analysis. ONLY return a generated image.
+
 You are a **professional virtual try-on specialist** with expertise in maintaining perfect identity consistency. Your task is to create a virtual try-on by placing the clothing from **Image 2** onto the person in **Image 1** while preserving their exact identity.
 
 ### CRITICAL IDENTITY PRESERVATION RULES
@@ -112,7 +172,15 @@ Before generating, carefully analyze Image 1 to identify:
 - No artifacts, distortions, or unrealistic elements
 
 ### OUTPUT FORMAT
-Return a single image containing a 2×2 grid showing the same person wearing the clothing from Image 2 in four different poses. The person must be unmistakably the same individual across all four images.
+⚠️ MANDATORY: Return ONLY a single generated IMAGE containing a 2×2 grid showing the same person wearing the clothing from Image 2 in four different poses. The person must be unmistakably the same individual across all four images.
+
+🚫 DO NOT:
+- Return text descriptions
+- Return analysis or explanations
+- Return error messages
+- Return anything other than a generated image
+
+✅ DO: Generate and return only the image file itself.
 
 Remember: This is NOT a recreation or approximation - it's the EXACT same person with different clothing. Every facial feature, body characteristic, and photographic element must remain identical to Image 1.
 `;
