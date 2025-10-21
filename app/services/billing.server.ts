@@ -373,10 +373,17 @@ async function updateShopPlan(shop: string, planKey: PlanKey): Promise<void> {
   const plan = PLANS[planKey];
   const now = new Date();
   
+  console.log(`🔧 Updating shop plan for ${shop}:`, {
+    planKey,
+    creditsLimit: plan.credits,
+    productLimit: plan.productLimit,
+  });
+  
   await prisma.appMetadata.upsert({
     where: { shop },
     update: {
       creditsLimit: plan.credits,
+      productLimit: plan.productLimit,
       isActive: true,
       subscriptionCreatedAt: now,
       lastResetDate: now,
@@ -385,11 +392,14 @@ async function updateShopPlan(shop: string, planKey: PlanKey): Promise<void> {
       shop,
       creditsUsed: 0,
       creditsLimit: plan.credits,
+      productLimit: plan.productLimit,
       isActive: true,
       subscriptionCreatedAt: now,
       lastResetDate: now,
     },
   });
+  
+  console.log(`✅ Shop plan updated successfully for ${shop}`);
 }
 
 /**
@@ -445,16 +455,10 @@ export async function hasProductLimitsExceeded(shop: string): Promise<{ exceeded
   });
 
   if (!metadata) {
-    return { exceeded: true, limit: 0, current: 0 };
+    console.log(`⚠️ No metadata found for shop ${shop}, returning default limits`);
+    return { exceeded: true, limit: 3, current: 0 };
   }
 
-  // Find the plan based on credits limit
-  const planKey = Object.keys(PLANS).find(key => 
-    PLANS[key as PlanKey].credits === metadata.creditsLimit
-  ) as PlanKey || 'FREE';
-  
-  const plan = PLANS[planKey];
-  
   // Count enabled products
   const enabledCount = await prisma.productTryOnSettings.count({
     where: {
@@ -463,14 +467,23 @@ export async function hasProductLimitsExceeded(shop: string): Promise<{ exceeded
     },
   });
 
+  // Use the stored productLimit from metadata
+  const productLimit = metadata.productLimit || 3;
+  
+  console.log(`📊 Product limit check for ${shop}:`, {
+    productLimit,
+    enabledCount,
+    exceeded: productLimit !== -1 && enabledCount >= productLimit,
+  });
+
   // Unlimited products (-1)
-  if (plan.productLimit === -1) {
+  if (productLimit === -1) {
     return { exceeded: false, limit: -1, current: enabledCount };
   }
 
   return {
-    exceeded: enabledCount >= plan.productLimit,
-    limit: plan.productLimit,
+    exceeded: enabledCount >= productLimit,
+    limit: productLimit,
     current: enabledCount,
   };
 }

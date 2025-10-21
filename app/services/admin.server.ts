@@ -224,23 +224,13 @@ export async function getDashboardStats(
 
   const creditsUsed = metadata?.creditsUsed || 0;
   const creditsLimit = metadata?.creditsLimit || 10;
+  const productLimit = metadata?.productLimit || 3;
   
   // Calculate days until reset
   const lastResetDate = metadata?.lastResetDate || new Date();
   const now = new Date();
   const daysSinceReset = Math.floor((now.getTime() - lastResetDate.getTime()) / (1000 * 60 * 60 * 24));
   const daysUntilReset = Math.max(0, 30 - daysSinceReset);
-
-  // Get product limit from billing plans
-  const PLANS = {
-    FREE: { credits: 50, productLimit: 3 },
-    SIDE_HUSSL: { credits: 500, productLimit: 100 },
-    BUSINESS: { credits: 10000, productLimit: -1 },
-    ALL_IN: { credits: -1, productLimit: -1 },
-  };
-
-  const planEntry = Object.values(PLANS).find(p => p.credits === creditsLimit);
-  const productLimit = planEntry?.productLimit || 3;
 
   return {
     totalProducts: products.length, // This is simplified, should be actual count

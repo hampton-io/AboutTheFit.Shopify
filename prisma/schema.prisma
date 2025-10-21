@@ -65,6 +65,7 @@ model AppMetadata {
   shop                  String    @unique
   creditsUsed           Int       @default(0)
   creditsLimit          Int       @default(10)
+  productLimit          Int       @default(3)
   isActive              Boolean   @default(true)
   subscriptionCreatedAt DateTime?
   lastResetDate         DateTime  @default(now())
