@@ -23,7 +23,7 @@ function isDevelopmentMode(): boolean {
 // Define pricing plans based on credit system
 const PLANS = {
   FREE: {
-    name: "Free Plan",
+    name: "Trial",
     price: 0,
     credits: 50,
     productLimit: 3,

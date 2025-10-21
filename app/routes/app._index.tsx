@@ -7,7 +7,7 @@ import { useAppBridge } from '@shopify/app-bridge-react';
 // Inline plans data to avoid SSR issues
 const PLANS = {
   FREE: {
-    name: "Free Plan",
+    name: "Trial",
     price: 0,
     credits: 50,
     productLimit: 3,
