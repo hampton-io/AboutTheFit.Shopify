@@ -10,6 +10,7 @@
       }
     },
     "routeIdToServerBundleId": {
+      "routes/api.billing.check-managed": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.proxy.check-enabled": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.proxy.tryon.create": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.billing.confirm": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -38,6 +39,15 @@
         "file": "app/root.tsx",
         "path": "",
         "config": {}
+      },
+      "routes/api.billing.check-managed": {
+        "id": "routes/api.billing.check-managed",
+        "parentId": "root",
+        "file": "app/routes/api.billing.check-managed.tsx",
+        "path": "api/billing/check-managed",
+        "config": {
+          "runtime": "nodejs"
+        }
       },
       "routes/api.proxy.check-enabled": {
         "id": "routes/api.proxy.check-enabled",
@@ -250,6 +260,12 @@
         "file": "root.tsx",
         "path": ""
       },
+      "routes/api.billing.check-managed": {
+        "id": "routes/api.billing.check-managed",
+        "parentId": "root",
+        "file": "routes/api.billing.check-managed.tsx",
+        "path": "api/billing/check-managed"
+      },
       "routes/api.proxy.check-enabled": {
         "id": "routes/api.proxy.check-enabled",
         "parentId": "root",
@@ -396,6 +412,11 @@
         "path": "",
         "file": "root.tsx",
         "children": [
+          {
+            "id": "routes/api.billing.check-managed",
+            "file": "routes/api.billing.check-managed.tsx",
+            "path": "api/billing/check-managed"
+          },
           {
             "id": "routes/api.proxy.check-enabled",
             "file": "routes/api.proxy.check-enabled.tsx",
