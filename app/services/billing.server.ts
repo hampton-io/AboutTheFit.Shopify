@@ -31,7 +31,7 @@ const PLANS = {
     features: ["50 try-ons per month", "Up to 3 products", "Basic virtual try-on"],
   },
   SIDE_HUSSL: {
-    name: "Side Hussle",
+    name: "SIde Hussle",
     price: 9.99,
     credits: 500,
     productLimit: 100,
@@ -73,7 +73,9 @@ async function isManagedPricing(): Promise<boolean> {
 export async function syncSubscriptionFromShopify(request: Request): Promise<void> {
   const { admin, session } = await authenticate.admin(request);
   
-  console.log(`🔄 Syncing subscription from Shopify for ${session.shop}`);
+  console.log(`\n🔄 ========== SYNC START ==========`);
+  console.log(`🔄 Shop: ${session.shop}`);
+  console.log(`🔄 Timestamp: ${new Date().toISOString()}`);
   
   try {
     const response = await admin.graphql(`
@@ -103,32 +105,64 @@ export async function syncSubscriptionFromShopify(request: Request): Promise<voi
     `);
 
     const data = await response.json();
+    console.log(`📋 Raw Shopify Response:`, JSON.stringify(data, null, 2));
+    
     const subscriptions = data.data.currentAppInstallation.activeSubscriptions;
+    console.log(`📊 Total subscriptions found: ${subscriptions.length}`);
+    
+    // Log all subscriptions
+    subscriptions.forEach((sub: any, index: number) => {
+      console.log(`\n📦 Subscription ${index + 1}:`);
+      console.log(`   ID: ${sub.id}`);
+      console.log(`   Name: "${sub.name}"`);
+      console.log(`   Status: ${sub.status}`);
+      console.log(`   Created: ${sub.createdAt}`);
+    });
     
     // Find active subscription
     const activeSubscription = subscriptions.find((sub: any) => 
       sub.status === 'ACTIVE'
     );
 
+    console.log(`\n🎯 Active subscription:`, activeSubscription ? activeSubscription.name : 'NONE');
+
     if (activeSubscription) {
-      // Map subscription name to plan key
+      console.log(`\n🔍 Matching plan name: "${activeSubscription.name}"`);
+      console.log(`📚 Available plans in PLANS constant:`);
+      Object.entries(PLANS).forEach(([key, plan]) => {
+        console.log(`   - ${key}: "${plan.name}"`);
+      });
+      
+      // Map subscription name to plan key (trim whitespace for comparison)
       const planKey = Object.keys(PLANS).find(key => 
-        PLANS[key as PlanKey].name === activeSubscription.name
+        PLANS[key as PlanKey].name.trim() === activeSubscription.name.trim()
       ) as PlanKey;
 
       if (planKey) {
-        console.log(`✅ Found active subscription: ${planKey} (${activeSubscription.name})`);
+        console.log(`✅ MATCH FOUND: ${planKey} → "${activeSubscription.name}"`);
+        console.log(`📝 Updating database with plan:`, {
+          planKey,
+          credits: PLANS[planKey].credits,
+          productLimit: PLANS[planKey].productLimit
+        });
         await updateShopPlan(session.shop, planKey);
+        console.log(`✅ Database updated successfully`);
       } else {
-        console.warn(`⚠️ Unknown subscription plan: ${activeSubscription.name}`);
+        console.warn(`⚠️ NO MATCH: Unknown subscription plan: "${activeSubscription.name}"`);
+        console.warn(`⚠️ Please ensure plan name in Shopify matches exactly (case-sensitive)`);
       }
     } else {
       // No active subscription - set to FREE
       console.log('ℹ️ No active subscription found, setting to FREE plan');
       await updateShopPlan(session.shop, 'FREE');
+      console.log(`✅ Set to FREE plan`);
     }
+    
+    console.log(`🔄 ========== SYNC END ==========\n`);
   } catch (error) {
-    console.error('Error syncing subscription from Shopify:', error);
+    console.error('❌ Error syncing subscription from Shopify:', error);
+    console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
+    console.log(`🔄 ========== SYNC FAILED ==========\n`);
     // Don't throw - just log the error
   }
 }
@@ -465,9 +499,9 @@ export async function getSubscriptionStatus(request: Request) {
     );
 
     if (activeSubscription) {
-      // Map subscription name to plan key
+      // Map subscription name to plan key (trim whitespace for comparison)
       const planKey = Object.keys(PLANS).find(key => 
-        PLANS[key as PlanKey].name === activeSubscription.name
+        PLANS[key as PlanKey].name.trim() === activeSubscription.name.trim()
       ) as PlanKey;
 
       return {

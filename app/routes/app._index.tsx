@@ -15,7 +15,7 @@ const PLANS = {
     features: ["Up to 3 products", "Basic virtual try-on"],
   },
   SIDE_HUSSL: {
-    name: "Side Hussle",
+    name: "SIde Hussle",
     price: 9.99,
     credits: 500,
     productLimit: 100,
@@ -96,12 +96,6 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [showBillingModal, setShowBillingModal] = useState(false);
-  
-  // Debug modal visibility
-  useEffect(() => {
-    console.log('💳 showBillingModal changed to:', showBillingModal);
-  }, [showBillingModal]);
-  const [selectedPlan, setSelectedPlan] = useState<PlanKey | null>(null);
 
   const plans = getAllPlans();
 
@@ -170,23 +164,6 @@ export default function Index() {
         `/api/admin/products?first=50${value ? `&query=${encodeURIComponent(value)}` : ''}`
       );
     }
-  };
-
-  const handleUpgradePlan = (planKey: PlanKey) => {
-    console.log('🔧 Upgrade plan clicked:', planKey);
-    
-    // For managed pricing, we can't use the API to create subscriptions
-    // Direct user to Shopify Admin where they can manage their subscription
-    shopify.toast.show(
-      'Opening Shopify Admin to manage your plan...',
-      { duration: 3000 }
-    );
-    
-    // Open Shopify's installed apps page
-    // Note: The merchant will need to find "About the Fit" and click "Manage subscription"
-    window.open('https://admin.shopify.com/apps', '_top');
-    
-    setShowBillingModal(false);
   };
 
   const handleCancelSubscription = () => {
@@ -708,25 +685,12 @@ export default function Index() {
               </button>
             </div>
             
-            <div style={{ 
-              backgroundColor: '#f0f7ff', 
-              border: '1px solid #0066cc', 
-              borderRadius: '8px',
-              padding: '16px',
-              marginBottom: '20px'
-            }}>
-              <p style={{ margin: 0, color: '#004080' }}>
-                <strong>ℹ️ Plan Management:</strong> To change your plan, go to{' '}
-                <strong>Shopify Admin → Apps → About the Fit → Manage app</strong>
-              </p>
-            </div>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '24px' }}>
               {plans.map((plan) => (
                 <div
                   key={plan.key}
                   style={{
-                    border: '1px solid #e1e3e5',
+                    border: subscription?.plan === plan.key ? '2px solid #008060' : '1px solid #e1e3e5',
                     borderRadius: '8px',
                     padding: '20px',
                     backgroundColor: subscription?.plan === plan.key ? '#f6f8fa' : 'white'
@@ -751,29 +715,7 @@ export default function Index() {
                     ))}
                   </ul>
                   
-                  {subscription?.plan !== plan.key ? (
-                    <button
-                      onClick={() => handleUpgradePlan(plan.key)}
-                      disabled={billingFetcher.state === 'submitting'}
-                      style={{
-                        backgroundColor: plan.price === 0 ? '#fff' : '#000',
-                        color: plan.price === 0 ? '#000' : '#fff',
-                        border: plan.price === 0 ? '1px solid #000' : 'none',
-                        padding: '12px 24px',
-                        borderRadius: '4px',
-                        cursor: billingFetcher.state === 'submitting' ? 'not-allowed' : 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        width: '100%'
-                      }}
-                    >
-                      {billingFetcher.state === 'submitting' ? 'Loading...' : 
-                       subscription?.plan === 'FREE' && plan.price > 0 ? 'Upgrade' : 
-                       subscription?.plan !== 'FREE' && plan.price > (subscription?.price || 0) ? 'Upgrade' :
-                       subscription?.plan !== 'FREE' && plan.price < (subscription?.price || 0) ? 'Downgrade' :
-                       'Select'}
-                    </button>
-                  ) : (
+                  {subscription?.plan === plan.key && (
                     <div style={{ 
                       padding: '12px', 
                       backgroundColor: '#d4edda', 
@@ -782,12 +724,33 @@ export default function Index() {
                       textAlign: 'center',
                       fontWeight: '600'
                     }}>
-                      Current Plan
+                      ✓ Current Plan
                     </div>
                   )}
                 </div>
               ))}
             </div>
+            
+            <button
+              onClick={() => {
+                window.open('https://admin.shopify.com/charges/aboutthefit/pricing_plans', '_top');
+                setShowBillingModal(false);
+              }}
+              style={{
+                backgroundColor: '#008060',
+                color: 'white',
+                border: 'none',
+                padding: '16px 32px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: '600',
+                width: '100%',
+                marginTop: '8px'
+              }}
+            >
+              Change Subscription
+            </button>
           </div>
         </div>
       )}
