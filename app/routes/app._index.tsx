@@ -647,12 +647,12 @@ export default function Index() {
       <s-section slot="aside" heading="Need help?">
         <s-stack direction="block" gap="base">
           <s-paragraph>
-            <s-link href="/app/additional">View analytics</s-link>
+            <a href="/app/additional">View analytics</a>
           </s-paragraph>
           <s-paragraph>
-            <s-link href="https://www.revuapp.io/submit/cmguzyiw40001l1046f965l8a" target="_blank">
+            <a href="https://www.revuapp.io/submit/cmguzyiw40001l1046f965l8a" target="_blank" rel="noopener noreferrer">
               Contact support
-            </s-link>
+            </a>
           </s-paragraph>
         </s-stack>
       </s-section>

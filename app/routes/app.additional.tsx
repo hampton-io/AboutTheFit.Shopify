@@ -74,9 +74,9 @@ export default function Additional() {
 
   return (
     <s-page heading="Try-On Analytics">
-      <s-link slot="primary-action" href="/app">
+      <a slot="primary-action" href="/app">
         Back to Products
-      </s-link>
+      </a>
 
       {/* Overview Stats */}
       <s-section heading="Overview">
