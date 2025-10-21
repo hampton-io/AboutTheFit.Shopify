@@ -174,11 +174,17 @@ export default function Index() {
 
   const handleUpgradePlan = (planKey: PlanKey) => {
     console.log('🔧 Upgrade plan clicked:', planKey);
-    setSelectedPlan(planKey);
-    billingFetcher.submit(
-      { plan: planKey },
-      { method: 'POST', action: '/api/billing/create' }
+    
+    // For managed pricing, we can't use the API to create subscriptions
+    // Show a message to the user
+    shopify.toast.show(
+      'To change your plan, please visit: Shopify Admin → Apps → About the Fit → Manage app',
+      { duration: 5000 }
     );
+    setShowBillingModal(false);
+    
+    // You can also open Shopify's app admin page in a new tab
+    // window.open('https://admin.shopify.com/store/[your-store]/apps/installed', '_blank');
   };
 
   const handleCancelSubscription = () => {
@@ -698,6 +704,19 @@ export default function Index() {
               >
                 ×
               </button>
+            </div>
+            
+            <div style={{ 
+              backgroundColor: '#f0f7ff', 
+              border: '1px solid #0066cc', 
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '20px'
+            }}>
+              <p style={{ margin: 0, color: '#004080' }}>
+                <strong>ℹ️ Plan Management:</strong> To change your plan, go to{' '}
+                <strong>Shopify Admin → Apps → About the Fit → Manage app</strong>
+              </p>
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>

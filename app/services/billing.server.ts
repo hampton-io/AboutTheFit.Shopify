@@ -59,6 +59,81 @@ const PLANS = {
 type PlanKey = keyof typeof PLANS;
 
 /**
+ * Check if app is using managed pricing
+ */
+async function isManagedPricing(): Promise<boolean> {
+  // Check environment variable to explicitly set managed pricing mode
+  return process.env.SHOPIFY_MANAGED_PRICING === 'true';
+}
+
+/**
+ * Sync subscription from Shopify to database (for Managed Pricing)
+ * This should be called periodically or when loading the app
+ */
+export async function syncSubscriptionFromShopify(request: Request): Promise<void> {
+  const { admin, session } = await authenticate.admin(request);
+  
+  console.log(`🔄 Syncing subscription from Shopify for ${session.shop}`);
+  
+  try {
+    const response = await admin.graphql(`
+      {
+        currentAppInstallation {
+          activeSubscriptions {
+            id
+            name
+            status
+            createdAt
+            lineItems {
+              plan {
+                pricingDetails {
+                  __typename
+                  ... on AppRecurringPricing {
+                    price {
+                      amount
+                      currencyCode
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `);
+
+    const data = await response.json();
+    const subscriptions = data.data.currentAppInstallation.activeSubscriptions;
+    
+    // Find active subscription
+    const activeSubscription = subscriptions.find((sub: any) => 
+      sub.status === 'ACTIVE'
+    );
+
+    if (activeSubscription) {
+      // Map subscription name to plan key
+      const planKey = Object.keys(PLANS).find(key => 
+        PLANS[key as PlanKey].name === activeSubscription.name
+      ) as PlanKey;
+
+      if (planKey) {
+        console.log(`✅ Found active subscription: ${planKey} (${activeSubscription.name})`);
+        await updateShopPlan(session.shop, planKey);
+      } else {
+        console.warn(`⚠️ Unknown subscription plan: ${activeSubscription.name}`);
+      }
+    } else {
+      // No active subscription - set to FREE
+      console.log('ℹ️ No active subscription found, setting to FREE plan');
+      await updateShopPlan(session.shop, 'FREE');
+    }
+  } catch (error) {
+    console.error('Error syncing subscription from Shopify:', error);
+    // Don't throw - just log the error
+  }
+}
+
+/**
  * Create a subscription for a merchant
  */
 export async function createSubscription(
@@ -72,11 +147,52 @@ export async function createSubscription(
   console.log('📋 Plan details:', plan);
   console.log('🏪 Shop:', session.shop);
   
+  // Handle free plan - just cancel any existing subscription and update database
   if (plan.price === 0) {
-    console.log('💰 Free plan - updating database');
-    // Handle free plan - just update database
+    console.log('💰 Free plan - cancelling existing subscription and updating database');
+    
+    // Try to cancel any active subscription
+    try {
+      const response = await admin.graphql(`
+        {
+          currentAppInstallation {
+            activeSubscriptions {
+              id
+              status
+            }
+          }
+        }
+      `);
+      
+      const data = await response.json();
+      const subscriptions = data.data.currentAppInstallation.activeSubscriptions;
+      
+      for (const subscription of subscriptions) {
+        if (subscription.status === 'ACTIVE') {
+          await admin.graphql(`
+            mutation appSubscriptionCancel($id: ID!) {
+              appSubscriptionCancel(id: $id) {
+                appSubscription {
+                  id
+                  status
+                }
+                userErrors {
+                  field
+                  message
+                }
+              }
+            }
+          `, {
+            variables: { id: subscription.id },
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      // Continue anyway - maybe there was no subscription to cancel
+    }
+    
     await updateShopPlan(session.shop, planKey);
-    // Return empty string to signal success without redirect (same as dev mode)
     return '';
   }
 
@@ -134,7 +250,23 @@ export async function createSubscription(
     const data = await response.json();
     
     if (data.data.appSubscriptionCreate.userErrors.length > 0) {
-      throw new Error(`Billing API error: ${data.data.appSubscriptionCreate.userErrors[0].message}`);
+      const errorMessage = data.data.appSubscriptionCreate.userErrors[0].message;
+      
+      // Check if this is a managed pricing error
+      if (errorMessage.toLowerCase().includes('managed pricing')) {
+        console.log('⚠️ Managed Pricing detected - cannot use Billing API');
+        console.log('💡 Current plan will be updated in database for tracking');
+        
+        // For managed pricing, we can't create subscriptions via API
+        // But we can update our database to track the intended plan
+        await updateShopPlan(session.shop, planKey);
+        
+        // Return empty string - no confirmation URL needed
+        // The merchant has already chosen their plan through Shopify's interface
+        return '';
+      }
+      
+      throw new Error(`Billing API error: ${errorMessage}`);
     }
 
     return data.data.appSubscriptionCreate.confirmationUrl;
