@@ -176,15 +176,17 @@ export default function Index() {
     console.log('🔧 Upgrade plan clicked:', planKey);
     
     // For managed pricing, we can't use the API to create subscriptions
-    // Show a message to the user
+    // Direct user to Shopify Admin where they can manage their subscription
     shopify.toast.show(
-      'To change your plan, please visit: Shopify Admin → Apps → About the Fit → Manage app',
-      { duration: 5000 }
+      'Opening Shopify Admin to manage your plan...',
+      { duration: 3000 }
     );
-    setShowBillingModal(false);
     
-    // You can also open Shopify's app admin page in a new tab
-    // window.open('https://admin.shopify.com/store/[your-store]/apps/installed', '_blank');
+    // Open Shopify's installed apps page
+    // Note: The merchant will need to find "About the Fit" and click "Manage subscription"
+    window.open('https://admin.shopify.com/apps', '_top');
+    
+    setShowBillingModal(false);
   };
 
   const handleCancelSubscription = () => {
