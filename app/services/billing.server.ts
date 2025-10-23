@@ -456,6 +456,7 @@ export async function getSubscriptionStatus(request: Request) {
           planName: plan.name,
           createdAt: metadata.subscriptionCreatedAt?.toISOString() || null,
           price: plan.price,
+          interval: 'EVERY_30_DAYS', // Default for dev mode
         };
       }
     } catch (error) {
@@ -481,6 +482,7 @@ export async function getSubscriptionStatus(request: Request) {
                       amount
                       currencyCode
                     }
+                    interval
                   }
                 }
               }
@@ -504,12 +506,16 @@ export async function getSubscriptionStatus(request: Request) {
         PLANS[key as PlanKey].name.trim() === activeSubscription.name.trim()
       ) as PlanKey;
 
+      const pricingDetails = activeSubscription.lineItems[0]?.plan?.pricingDetails;
+      const interval = pricingDetails?.interval || 'EVERY_30_DAYS';
+
       return {
         isActive: true,
         plan: planKey,
         planName: activeSubscription.name,
         createdAt: activeSubscription.createdAt,
-        price: activeSubscription.lineItems[0]?.plan?.pricingDetails?.price?.amount || 0,
+        price: pricingDetails?.price?.amount || 0,
+        interval,
       };
     }
 
@@ -519,6 +525,7 @@ export async function getSubscriptionStatus(request: Request) {
       planName: 'Free Plan',
       createdAt: null,
       price: 0,
+      interval: null,
     };
   } catch (error) {
     console.error('Error getting subscription status:', error);
@@ -528,6 +535,7 @@ export async function getSubscriptionStatus(request: Request) {
       planName: 'Free Plan',
       createdAt: null,
       price: 0,
+      interval: null,
     };
   }
 }

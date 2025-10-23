@@ -34,7 +34,7 @@ export class VirtualTryOnAI {
     this.model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash-image',
       generationConfig: {
-        temperature: 0.4,      // Lower temperature for more consistent image output
+        temperature: 0.01,      // Lower temperature for more consistent image output
         maxOutputTokens: 8192, // Maximum allowed for image generation
         topP: 0.95,            // Slightly higher for better image quality
         topK: 40,              // Standard value for image generation
@@ -172,7 +172,7 @@ Before generating, carefully analyze Image 1 to identify:
 - No artifacts, distortions, or unrealistic elements
 
 ### OUTPUT FORMAT
-⚠️ MANDATORY: Return ONLY a single generated IMAGE containing a 2×2 grid showing the same person wearing the clothing from Image 2 in four different poses. The person must be unmistakably the same individual across all four images.
+⚠️ MANDATORY: Return ONLY a single generated IMAGE containing a 2×2 grid showing the "same person" wearing the clothing from Image 2 in four different poses. The person must be unmistakably the same individual across all four images.
 
 🚫 DO NOT:
 - Return text descriptions

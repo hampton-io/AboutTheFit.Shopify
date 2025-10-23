@@ -49,6 +49,21 @@ function getAllPlans() {
   }));
 }
 
+// Helper function to convert Shopify billing interval to display text
+function getIntervalDisplay(interval?: string | null): { short: string; long: string } {
+  if (!interval) {
+    return { short: '/month', long: 'Billed monthly' };
+  }
+  
+  switch (interval) {
+    case 'ANNUAL':
+      return { short: '/year', long: 'Billed annually' };
+    case 'EVERY_30_DAYS':
+    default:
+      return { short: '/month', long: 'Billed monthly' };
+  }
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
   return null;
@@ -80,6 +95,7 @@ interface Subscription {
   planName: string;
   createdAt: string | null;
   price: number;
+  interval?: string | null;
 }
 
 export default function Index() {
@@ -367,9 +383,9 @@ export default function Index() {
                           <div style={{ fontSize: '28px', fontWeight: '700', lineHeight: '1' }}>
                             ${subscription.price}
                           </div>
-                          <s-text tone="neutral">/month</s-text>
+                          <s-text tone="neutral">{getIntervalDisplay(subscription.interval).short}</s-text>
                         </div>
-                        <s-text tone="neutral">Billed monthly</s-text>
+                        <s-text tone="neutral">{getIntervalDisplay(subscription.interval).long}</s-text>
                       </>
                     ) : (
                       <>
