@@ -17,7 +17,9 @@
       "routes/api.billing.cancel": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.billing.create": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.billing.status": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.admin.canned": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.admin.toggle": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.proxy.canned": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.admin.stats": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.cleanup": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/auth.login": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -102,11 +104,29 @@
           "runtime": "nodejs"
         }
       },
+      "routes/api.admin.canned": {
+        "id": "routes/api.admin.canned",
+        "parentId": "root",
+        "file": "app/routes/api.admin.canned.tsx",
+        "path": "api/admin/canned",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
       "routes/api.admin.toggle": {
         "id": "routes/api.admin.toggle",
         "parentId": "root",
         "file": "app/routes/api.admin.toggle.tsx",
         "path": "api/admin/toggle",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.proxy.canned": {
+        "id": "routes/api.proxy.canned",
+        "parentId": "root",
+        "file": "app/routes/api.proxy.canned.tsx",
+        "path": "api/proxy/canned",
         "config": {
           "runtime": "nodejs"
         }
@@ -292,11 +312,23 @@
         "file": "routes/api.billing.status.tsx",
         "path": "api/billing/status"
       },
+      "routes/api.admin.canned": {
+        "id": "routes/api.admin.canned",
+        "parentId": "root",
+        "file": "routes/api.admin.canned.tsx",
+        "path": "api/admin/canned"
+      },
       "routes/api.admin.toggle": {
         "id": "routes/api.admin.toggle",
         "parentId": "root",
         "file": "routes/api.admin.toggle.tsx",
         "path": "api/admin/toggle"
+      },
+      "routes/api.proxy.canned": {
+        "id": "routes/api.proxy.canned",
+        "parentId": "root",
+        "file": "routes/api.proxy.canned.tsx",
+        "path": "api/proxy/canned"
       },
       "routes/api.admin.stats": {
         "id": "routes/api.admin.stats",
@@ -432,9 +464,19 @@
             "path": "api/billing/status"
           },
           {
+            "id": "routes/api.admin.canned",
+            "file": "routes/api.admin.canned.tsx",
+            "path": "api/admin/canned"
+          },
+          {
             "id": "routes/api.admin.toggle",
             "file": "routes/api.admin.toggle.tsx",
             "path": "api/admin/toggle"
+          },
+          {
+            "id": "routes/api.proxy.canned",
+            "file": "routes/api.proxy.canned.tsx",
+            "path": "api/proxy/canned"
           },
           {
             "id": "routes/api.admin.stats",

@@ -94,3 +94,41 @@ model ProductTryOnSettings {
   @@index([tryOnEnabled])
   @@map("product_try_on_settings")
 }
+
+// Canned/Pre-selected images that users can choose from
+model CannedImage {
+  id          String        @id @default(cuid())
+  name        String
+  imageUrl    String        @unique
+  description String?
+  gender      String?       // e.g., 'male', 'female', 'unisex'
+  isActive    Boolean       @default(true)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  cachedTryOns CachedTryOn[]
+
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("canned_image")
+}
+
+// Cached try-on results for canned images + products
+model CachedTryOn {
+  id              String      @id @default(cuid())
+  shop            String
+  cannedImageId   String
+  productId       String
+  productTitle    String
+  productImage    String
+  resultImageUrl  String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  cannedImage     CannedImage @relation(fields: [cannedImageId], references: [id], onDelete: Cascade)
+
+  @@unique([shop, cannedImageId, productId])
+  @@index([shop])
+  @@index([cannedImageId])
+  @@index([productId])
+  @@map("cached_try_on")
+}

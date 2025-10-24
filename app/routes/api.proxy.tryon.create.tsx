@@ -2,6 +2,7 @@ import type { ActionFunctionArgs } from 'react-router';
 import { virtualTryOnAI } from '../services/ai.server';
 import { hasTryOnLimitsExceeded, checkAndResetMonthlyLimits } from '../services/billing.server';
 import { incrementCreditsUsed, createTryOnRequest, updateTryOnStatus } from '../services/tryon.server';
+import { getCannedImageById, getCachedTryOn, upsertCachedTryOn } from '../services/canned.server';
 import { TryOnStatus } from '../db.server';
 
 /**
@@ -47,16 +48,87 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     const body = await request.json();
-    const { productId, productTitle, productImage, userPhoto } = body;
+    const { productId, productTitle, productImage, userPhoto, cannedImageId } = body;
 
     console.log('📦 Product:', productTitle);
     console.log('📸 User photo received:', userPhoto ? 'Yes' : 'No');
+    console.log('🎭 Canned image ID:', cannedImageId || 'None');
 
-    if (!productId || !productTitle || !productImage || !userPhoto) {
+    if (!productId || !productTitle || !productImage) {
       return Response.json(
         { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
+    }
+
+    // Validate that either userPhoto or cannedImageId is provided
+    if (!userPhoto && !cannedImageId) {
+      return Response.json(
+        { success: false, error: 'Either userPhoto or cannedImageId is required' },
+        { status: 400 }
+      );
+    }
+
+    // If using a canned image, check the cache first
+    if (cannedImageId) {
+      console.log('🔍 Checking cache for canned image:', cannedImageId);
+      
+      // Verify the canned image exists
+      const cannedImage = await getCannedImageById(cannedImageId);
+      if (!cannedImage) {
+        return Response.json(
+          { success: false, error: 'Invalid canned image ID' },
+          { status: 400 }
+        );
+      }
+
+      // Check if we have a cached result
+      const cachedResult = await getCachedTryOn({
+        shop,
+        cannedImageId,
+        productId,
+      });
+
+      if (cachedResult) {
+        console.log('✅ Cache hit! Returning cached result');
+        
+        // Still create a try-on request record for analytics
+        await createTryOnRequest({
+          shop,
+          productId,
+          productTitle,
+          productImage,
+          userPhotoUrl: cannedImage.imageUrl,
+          metadata: {
+            createdVia: 'storefront',
+            cached: true,
+            cannedImageId,
+            timestamp: new Date().toISOString(),
+          },
+        });
+
+        // Still increment credits for tracking (cached results count towards usage)
+        await incrementCreditsUsed(shop);
+
+        return Response.json({
+          success: true,
+          resultImage: cachedResult.resultImageUrl,
+          cached: true,
+        });
+      }
+
+      console.log('❌ Cache miss. Generating new try-on...');
+    }
+
+    // Determine the actual user photo to use
+    let actualUserPhoto = userPhoto;
+    let actualCannedImage = null;
+    
+    if (cannedImageId) {
+      actualCannedImage = await getCannedImageById(cannedImageId);
+      if (actualCannedImage) {
+        actualUserPhoto = actualCannedImage.imageUrl;
+      }
     }
 
     // Create try-on request record (PENDING status)
@@ -65,9 +137,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       productId,
       productTitle,
       productImage,
-      userPhotoUrl: 'data:image/jpeg;base64,...', // User photo stored locally
+      userPhotoUrl: actualUserPhoto || 'data:image/jpeg;base64,...',
       metadata: {
         createdVia: 'storefront',
+        cannedImageId: cannedImageId || null,
         timestamp: new Date().toISOString(),
       },
     });
@@ -77,7 +150,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     // Generate try-on using AI
     const aiResult = await virtualTryOnAI.generateTryOn({
-      userPhoto: userPhoto,
+      userPhoto: actualUserPhoto,
       clothingImage: productImage,
       clothingName: productTitle,
     });
@@ -121,6 +194,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       },
     });
 
+    // If using a canned image, cache the result for future use
+    if (cannedImageId && aiResult.resultImage) {
+      console.log('💾 Caching result for canned image:', cannedImageId);
+      try {
+        await upsertCachedTryOn({
+          shop,
+          cannedImageId,
+          productId,
+          productTitle,
+          productImage,
+          resultImageUrl: aiResult.resultImage,
+        });
+        console.log('✅ Result cached successfully');
+      } catch (error) {
+        console.error('❌ Failed to cache result:', error);
+        // Don't fail the request if caching fails
+      }
+    }
+
     // Increment credits used (only on success)
     await incrementCreditsUsed(shop);
     console.log('💳 Credits incremented for shop:', shop);
@@ -130,6 +222,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       success: true,
       resultImage: aiResult.resultImage,
       analysisText: aiResult.analysisText,
+      cached: false, // This is a fresh generation
     });
   } catch (error) {
     console.error('❌ Error in try-on creation:', error);

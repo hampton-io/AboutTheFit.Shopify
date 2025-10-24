@@ -102,7 +102,7 @@
           color: #666;
           font-size: 15px;
           text-align: center;
-        ">Upload a photo to see how this looks on you</p>
+        ">Upload your photo or choose a model</p>
         
         <div 
           id="drop-zone-{{ block.id }}"
@@ -128,6 +128,27 @@
           <p style="margin: 0 0 8px; font-weight: 600; font-size: 15px; color: #333;">Click or drag to upload</p>
           <p style="margin: 0; font-size: 13px; color: #999;">JPG, PNG or WebP (max 10MB)</p>
         </div>
+        
+        <div style="
+          text-align: center;
+          margin: 24px 0 16px;
+          color: #999;
+          font-size: 13px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        ">
+          <div style="flex: 1; height: 1px; background: #e5e5e5;"></div>
+          <span>or choose a model</span>
+          <div style="flex: 1; height: 1px; background: #e5e5e5;"></div>
+        </div>
+        
+        <!-- Pre-selected Images -->
+        <div id="canned-images-{{ block.id }}" style="
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+        "></div>
       </div>
       
       <input 
@@ -386,6 +407,9 @@
       console.log('✅ Modal moved to body element to prevent layout constraints');
     }
     
+    // Load canned images
+    await loadCannedImages('{{ block.id }}');
+    
     // Always show button in theme editor for preview
     if (isThemeEditor) {
       console.log('🎨 Theme editor mode - showing button');
@@ -536,7 +560,92 @@
     document.getElementById('preview-' + blockId).style.display = 'none';
     document.getElementById('upload-zone-container-' + blockId).style.display = 'block';
     window['tryOnPhoto_' + blockId] = null;
+    window['cannedImageId_' + blockId] = null;
     localStorage.removeItem('aboutTheFit_userPhoto');
+  }
+  
+  // Load and display canned images
+  async function loadCannedImages(blockId) {
+    try {
+      console.log('🎭 Loading canned images...');
+      const response = await fetch('/apps/aboutthefit/canned');
+      console.log('📡 Response status:', response.status);
+      const data = await response.json();
+      console.log('📦 Data received:', data);
+      
+      if (data.success && data.images && data.images.length > 0) {
+        console.log(`✅ Found ${data.images.length} canned images`);
+        const container = document.getElementById('canned-images-' + blockId);
+        container.innerHTML = '';
+        
+        data.images.forEach((image) => {
+          const imgWrapper = document.createElement('div');
+          imgWrapper.style.cssText = `
+            position: relative;
+            cursor: pointer;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+          `;
+          imgWrapper.setAttribute('data-canned-id', image.id);
+          
+          imgWrapper.innerHTML = `
+            <img 
+              src="${image.imageUrl}" 
+              alt="${image.name}"
+              style="
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+              "
+            />
+            <div style="
+              position: absolute;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+              padding: 8px 6px 6px;
+              font-size: 11px;
+              color: white;
+              font-weight: 600;
+            ">${image.name}</div>
+          `;
+          
+          imgWrapper.addEventListener('click', () => selectCannedImage(blockId, image));
+          imgWrapper.addEventListener('mouseover', () => {
+            imgWrapper.style.transform = 'scale(1.05)';
+            imgWrapper.style.borderColor = '#000';
+          });
+          imgWrapper.addEventListener('mouseout', () => {
+            imgWrapper.style.transform = 'scale(1)';
+            imgWrapper.style.borderColor = 'transparent';
+          });
+          
+          container.appendChild(imgWrapper);
+        });
+      } else {
+        console.log('⚠️ No canned images found or API returned empty');
+      }
+    } catch (error) {
+      console.error('❌ Failed to load canned images:', error);
+    }
+  }
+  
+  // Handle canned image selection
+  function selectCannedImage(blockId, image) {
+    // Store the canned image data
+    window['cannedImageId_' + blockId] = image.id;
+    window['tryOnPhoto_' + blockId] = image.imageUrl;
+    
+    // Show preview
+    const img = document.getElementById('preview-img-' + blockId);
+    img.src = image.imageUrl;
+    
+    document.getElementById('upload-zone-container-' + blockId).style.display = 'none';
+    document.getElementById('preview-' + blockId).style.display = 'block';
   }
   
   // Generate try-on
@@ -581,21 +690,36 @@
       const API_URL = '/apps/aboutthefit/tryon/create';
       console.log('🎨 Calling try-on API...');
       
+      const cannedImageId = window['cannedImageId_' + blockId];
+      
+      const requestBody = {
+        productId: productId,
+        productTitle: productTitle,
+        productImage: productImage,
+      };
+      
+      // Include either cannedImageId or userPhoto
+      if (cannedImageId) {
+        requestBody.cannedImageId = cannedImageId;
+        console.log('🎭 Using canned image:', cannedImageId);
+      } else {
+        requestBody.userPhoto = photoData;
+      }
+      
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          productId: productId,
-          productTitle: productTitle,
-          productImage: productImage,
-          userPhoto: photoData,
-        }),
+        body: JSON.stringify(requestBody),
       });
       
       const data = await response.json();
       console.log('📦 Response:', data.success ? 'Success!' : 'Failed');
+      
+      if (data.cached) {
+        console.log('⚡ Instant result from cache!');
+      }
       
       if (data.success && data.resultImage) {
         // Stop loading messages
