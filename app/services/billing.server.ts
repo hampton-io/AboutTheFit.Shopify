@@ -25,6 +25,7 @@ const PLANS = {
   FREE: {
     name: "Trial",
     price: 0,
+    annualPrice: 0,
     credits: 50,
     productLimit: 3,
     trialDays: 0,
@@ -33,6 +34,7 @@ const PLANS = {
   SIDE_HUSSL: {
     name: "SIde Hussle",
     price: 9.99,
+    annualPrice: 99.99, // ~$8.33/month when paid yearly
     credits: 500,
     productLimit: 100,
     trialDays: 7,
@@ -41,6 +43,7 @@ const PLANS = {
   BUSINESS: {
     name: "Business",
     price: 39.0,
+    annualPrice: 390.0, // ~$32.50/month when paid yearly
     credits: 10000,
     productLimit: -1, // -1 represents unlimited
     trialDays: 14,
@@ -49,6 +52,7 @@ const PLANS = {
   ALL_IN: {
     name: "All In",
     price: 99.0,
+    annualPrice: 990.0, // ~$82.50/month when paid yearly
     credits: -1, // -1 represents unlimited
     productLimit: -1, // -1 represents unlimited
     trialDays: 14,
@@ -432,38 +436,7 @@ export async function cancelSubscription(request: Request): Promise<boolean> {
 export async function getSubscriptionStatus(request: Request) {
   const { admin, session } = await authenticate.admin(request);
 
-  // In development mode, always check our database first
-  const isDevelopment = isDevelopmentMode();
-  
-  if (isDevelopment) {
-    console.log('🧪 Development mode: Checking database for subscription');
-    try {
-      const metadata = await prisma.appMetadata.findUnique({
-        where: { shop: session.shop },
-      });
-
-      if (metadata && metadata.creditsLimit) {
-        // Find the plan based on credits limit
-        const planKey = Object.keys(PLANS).find(key => 
-          PLANS[key as PlanKey].credits === metadata.creditsLimit
-        ) as PlanKey || 'FREE';
-        
-        const plan = PLANS[planKey];
-        
-        return {
-          isActive: metadata.isActive,
-          plan: planKey,
-          planName: plan.name,
-          createdAt: metadata.subscriptionCreatedAt?.toISOString() || null,
-          price: plan.price,
-          interval: 'EVERY_30_DAYS', // Default for dev mode
-        };
-      }
-    } catch (error) {
-      console.error('Error reading from database:', error);
-    }
-  }
-
+  // In development mode, we still need to query Shopify to get accurate pricing
   try {
     const response = await admin.graphql(`
       {
@@ -493,6 +466,12 @@ export async function getSubscriptionStatus(request: Request) {
     `);
 
     const data = await response.json();
+    
+    // Check if we got valid data
+    if (!data.data || !data.data.currentAppInstallation) {
+      throw new Error('Invalid Shopify response - no currentAppInstallation');
+    }
+    
     const subscriptions = data.data.currentAppInstallation.activeSubscriptions;
     
     // Find active subscription
@@ -507,14 +486,26 @@ export async function getSubscriptionStatus(request: Request) {
       ) as PlanKey;
 
       const pricingDetails = activeSubscription.lineItems[0]?.plan?.pricingDetails;
-      const interval = pricingDetails?.interval || 'EVERY_30_DAYS';
+      let interval = pricingDetails?.interval || 'EVERY_30_DAYS';
+      const price = parseFloat(pricingDetails?.price?.amount || '0');
+
+      // For Managed Pricing, detect annual plans by comparing price to our plan definitions
+      if (planKey && PLANS[planKey]) {
+        const plan = PLANS[planKey];
+        // If the price matches the annual price (within $1 tolerance), it's an annual subscription
+        if (Math.abs(price - plan.annualPrice) < 1) {
+          interval = 'ANNUAL';
+        } else if (Math.abs(price - plan.price) < 1) {
+          interval = 'EVERY_30_DAYS';
+        }
+      }
 
       return {
         isActive: true,
         plan: planKey,
         planName: activeSubscription.name,
         createdAt: activeSubscription.createdAt,
-        price: pricingDetails?.price?.amount || 0,
+        price,
         interval,
       };
     }

@@ -9,6 +9,7 @@ const PLANS = {
   FREE: {
     name: "Trial",
     price: 0,
+    annualPrice: 0,
     credits: 50,
     productLimit: 3,
     trialDays: 0,
@@ -17,6 +18,7 @@ const PLANS = {
   SIDE_HUSSL: {
     name: "SIde Hussle",
     price: 9.99,
+    annualPrice: 99.99,
     credits: 500,
     productLimit: 100,
     trialDays: 7,
@@ -25,6 +27,7 @@ const PLANS = {
   BUSINESS: {
     name: "Business",
     price: 39.0,
+    annualPrice: 390.0,
     credits: 10000,
     productLimit: -1, // -1 represents unlimited
     trialDays: 14,
@@ -33,6 +36,7 @@ const PLANS = {
   ALL_IN: {
     name: "All In",
     price: 99.0,
+    annualPrice: 990.0,
     credits: -1, // -1 represents unlimited
     productLimit: -1, // -1 represents unlimited
     trialDays: 14,
@@ -57,8 +61,11 @@ function getIntervalDisplay(interval?: string | null): { short: string; long: st
   
   switch (interval) {
     case 'ANNUAL':
+    case 'YEARLY':
+    case 'EVERY_365_DAYS':
       return { short: '/year', long: 'Billed annually' };
     case 'EVERY_30_DAYS':
+    case 'MONTHLY':
     default:
       return { short: '/month', long: 'Billed monthly' };
   }
@@ -379,6 +386,28 @@ export default function Index() {
                     </div>
                     {subscription.price > 0 ? (
                       <>
+                        {(subscription.interval === 'ANNUAL' || subscription.interval === 'YEARLY' || subscription.interval === 'EVERY_365_DAYS') ? (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                              <div style={{ fontSize: '28px', fontWeight: '700', lineHeight: '1' }}>
+                                ${subscription.price}
+                              </div>
+                              <s-text tone="neutral">/year</s-text>
+                            </div>
+                            <s-text tone="neutral">
+                              ${(subscription.price / 12).toFixed(2)}/month when billed annually
+                            </s-text>
+                            <s-text tone="success">
+                              <strong>✓ Billed annually</strong>
+                            </s-text>
+                            {subscription.plan && PLANS[subscription.plan] && (
+                              <s-text tone="success">
+                                You're saving ${(PLANS[subscription.plan].price * 12 - subscription.price).toFixed(2)} per year!
+                              </s-text>
+                            )}
+                          </>
+                        ) : (
+                      <>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                           <div style={{ fontSize: '28px', fontWeight: '700', lineHeight: '1' }}>
                             ${subscription.price}
@@ -386,6 +415,8 @@ export default function Index() {
                           <s-text tone="neutral">{getIntervalDisplay(subscription.interval).short}</s-text>
                         </div>
                         <s-text tone="neutral">{getIntervalDisplay(subscription.interval).long}</s-text>
+                          </>
+                        )}
                       </>
                     ) : (
                       <>
@@ -714,12 +745,26 @@ export default function Index() {
                 >
                   <div style={{ marginBottom: '12px' }}>
                     <h3 style={{ margin: '0 0 8px 0' }}>{plan.name}</h3>
+                    {plan.price === 0 ? (
                     <p style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>
-                      {plan.price === 0 ? 'Free' : `$${plan.price}/month`}
-                    </p>
+                        Free
+                      </p>
+                    ) : (
+                      <>
+                        <p style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 'bold' }}>
+                          ${plan.price}/month
+                        </p>
+                        <p style={{ margin: 0, fontSize: '16px', color: '#666' }}>
+                          or ${plan.annualPrice}/year
+                        </p>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#008060', fontWeight: '600' }}>
+                          Save ${((plan.price * 12) - plan.annualPrice).toFixed(2)} with annual billing
+                        </p>
+                      </>
+                    )}
                   </div>
                   
-                  <p style={{ color: '#666', marginBottom: '12px' }}>
+                  <p style={{ color: '#666', marginBottom: '12px', paddingTop: '8px', borderTop: '1px solid #e1e3e5' }}>
                     {plan.credits === -1 ? 'Unlimited try-ons' : `${plan.credits} try-ons/month`}
                   </p>
                   
