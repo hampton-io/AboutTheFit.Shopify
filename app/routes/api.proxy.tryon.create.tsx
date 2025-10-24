@@ -4,6 +4,7 @@ import { hasTryOnLimitsExceeded, checkAndResetMonthlyLimits } from '../services/
 import { incrementCreditsUsed, createTryOnRequest, updateTryOnStatus } from '../services/tryon.server';
 import { getCannedImageById, getCachedTryOn, upsertCachedTryOn } from '../services/canned.server';
 import { TryOnStatus } from '../db.server';
+import { optimizeImagesForTryOn } from '../services/image-optimizer.server';
 
 /**
  * App Proxy endpoint for customer try-on requests
@@ -146,12 +147,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
 
     console.log('📝 Try-on request created:', tryOnRequest.id);
-    console.log('🤖 Calling AI service...');
+    console.log('🖼️  Optimizing images before AI processing...');
 
-    // Generate try-on using AI
-    const aiResult = await virtualTryOnAI.generateTryOn({
+    // Optimize images before sending to AI to reduce token usage and costs
+    const optimizedImages = await optimizeImagesForTryOn({
       userPhoto: actualUserPhoto,
       clothingImage: productImage,
+    });
+
+    console.log('✅ Images optimized successfully');
+    console.log(`💰 Size reduced by ${optimizedImages.stats.totalSavings.toFixed(1)}% - saving tokens and costs!`);
+    console.log('🤖 Calling AI service with optimized images...');
+
+    // Generate try-on using AI with optimized images
+    const aiResult = await virtualTryOnAI.generateTryOn({
+      userPhoto: optimizedImages.userPhoto,
+      clothingImage: optimizedImages.clothingImage,
       clothingName: productTitle,
     });
 
