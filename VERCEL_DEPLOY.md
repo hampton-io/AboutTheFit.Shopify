@@ -93,8 +93,8 @@ npx prisma db push
 2. Run the following to create tables:
 
 ```sql
--- Create Session table
-CREATE TABLE "Session" (
+-- Create session table (lowercase required by Shopify session storage)
+CREATE TABLE "session" (
   "id" TEXT PRIMARY KEY,
   "shop" TEXT NOT NULL,
   "state" TEXT NOT NULL,
