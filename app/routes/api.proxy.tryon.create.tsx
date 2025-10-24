@@ -4,7 +4,7 @@ import { hasTryOnLimitsExceeded, checkAndResetMonthlyLimits } from '../services/
 import { incrementCreditsUsed, createTryOnRequest, updateTryOnStatus } from '../services/tryon.server';
 import { getCannedImageById, getCachedTryOn, upsertCachedTryOn } from '../services/canned.server';
 import { TryOnStatus } from '../db.server';
-import { optimizeImagesForTryOn } from '../services/image-optimizer.server';
+import { optimizeImage } from '../services/image-optimizer.server';
 
 /**
  * App Proxy endpoint for customer try-on requests
@@ -147,22 +147,44 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
 
     console.log('📝 Try-on request created:', tryOnRequest.id);
-    console.log('🖼️  Optimizing images before AI processing...');
+    
+    // Check if image optimization is enabled (can be disabled via env var)
+    const enableOptimization = process.env.ENABLE_IMAGE_OPTIMIZATION !== 'false';
+    
+    let finalUserPhoto = actualUserPhoto;
+    
+    if (enableOptimization) {
+      try {
+        console.log('🖼️  Optimizing user photo before AI processing...');
+        
+        // Optimize user photo before sending to AI to reduce token usage and costs
+        // Note: Product images from Shopify are already optimized, so we skip those
+        // Using higher quality settings (95%) to ensure AI compatibility
+        const optimizedUserPhoto = await optimizeImage(actualUserPhoto, {
+          maxWidth: 1536,  // Increased from 1024 for better AI processing
+          maxHeight: 1536, // Increased from 1024 for better AI processing
+          quality: 95,     // Increased from 85 for better quality
+        });
 
-    // Optimize images before sending to AI to reduce token usage and costs
-    const optimizedImages = await optimizeImagesForTryOn({
-      userPhoto: actualUserPhoto,
-      clothingImage: productImage,
-    });
+        console.log('✅ User photo optimized successfully');
+        console.log(`💰 User photo size reduced by ${optimizedUserPhoto.compressionRatio.toFixed(1)}% - saving tokens!`);
+        
+        finalUserPhoto = optimizedUserPhoto.data;
+      } catch (error) {
+        console.error('⚠️  Image optimization failed, using original image:', error);
+        finalUserPhoto = actualUserPhoto;
+      }
+    } else {
+      console.log('ℹ️  Image optimization disabled (ENABLE_IMAGE_OPTIMIZATION=false)');
+    }
+    
+    console.log('🤖 Calling AI service...');
 
-    console.log('✅ Images optimized successfully');
-    console.log(`💰 Size reduced by ${optimizedImages.stats.totalSavings.toFixed(1)}% - saving tokens and costs!`);
-    console.log('🤖 Calling AI service with optimized images...');
-
-    // Generate try-on using AI with optimized images
+    // Generate try-on using AI
+    // Product image is used as-is (already optimized by Shopify)
     const aiResult = await virtualTryOnAI.generateTryOn({
-      userPhoto: optimizedImages.userPhoto,
-      clothingImage: optimizedImages.clothingImage,
+      userPhoto: finalUserPhoto,
+      clothingImage: productImage,
       clothingName: productTitle,
     });
 

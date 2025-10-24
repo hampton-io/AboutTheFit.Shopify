@@ -60,29 +60,61 @@ export async function optimizeImage(
     let originalSize: number;
 
     if (input.startsWith('data:image/')) {
-      // Base64 input
+      // Base64 input with data URI
       const base64Data = input.replace(/^data:image\/[a-z]+;base64,/, '');
       buffer = Buffer.from(base64Data, 'base64');
       originalSize = buffer.length;
     } else if (input.startsWith('http://') || input.startsWith('https://')) {
-      // URL input
+      // URL input - fetch the image
+      console.log(`📥 Fetching image from URL...`);
       const response = await fetch(input);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
+      
       const arrayBuffer = await response.arrayBuffer();
       buffer = Buffer.from(arrayBuffer);
       originalSize = buffer.length;
+      
+      // Validate it's actually an image
+      if (originalSize === 0) {
+        throw new Error('Fetched image is empty');
+      }
     } else {
       // Assume it's raw base64 without the data URI prefix
-      buffer = Buffer.from(input, 'base64');
-      originalSize = buffer.length;
+      try {
+        buffer = Buffer.from(input, 'base64');
+        originalSize = buffer.length;
+        
+        // Validate the buffer is not empty and seems like an image
+        if (originalSize === 0) {
+          throw new Error('Image buffer is empty');
+        }
+      } catch (decodeError) {
+        throw new Error(`Failed to decode base64 image: ${decodeError instanceof Error ? decodeError.message : 'Unknown error'}`);
+      }
     }
 
     console.log(`📏 Original image size: ${(originalSize / 1024).toFixed(2)} KB`);
 
     // Process the image with sharp
-    const sharpInstance = sharp(buffer);
-    const metadata = await sharpInstance.metadata();
-
-    console.log(`📐 Original dimensions: ${metadata.width}x${metadata.height}`);
+    let sharpInstance;
+    let metadata;
+    
+    try {
+      sharpInstance = sharp(buffer);
+      metadata = await sharpInstance.metadata();
+      
+      // Validate we got valid metadata
+      if (!metadata.format || !metadata.width || !metadata.height) {
+        throw new Error('Invalid image metadata - file may be corrupted or not an image');
+      }
+      
+      console.log(`📐 Original dimensions: ${metadata.width}x${metadata.height} (${metadata.format})`);
+    } catch (sharpError) {
+      throw new Error(`Sharp processing failed: ${sharpError instanceof Error ? sharpError.message : 'Unknown error'}`);
+    }
 
     // Resize if needed (maintain aspect ratio)
     let processedImage = sharpInstance.resize(opts.maxWidth, opts.maxHeight, {
@@ -134,26 +166,28 @@ export async function optimizeImage(
       compressionRatio: (1 - optimizedSize / originalSize) * 100,
     };
   } catch (error) {
-    console.error('❌ Error optimizing image:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Error optimizing image:', errorMessage);
     
-    // In production, if optimization fails, return the original image
-    // This ensures the service continues to work even if Sharp has issues
-    if (process.env.NODE_ENV === 'production') {
-      console.warn('⚠️  Using unoptimized image as fallback');
-      return {
-        data: input.startsWith('data:') ? input : `data:image/jpeg;base64,${input}`,
-        width: opts.maxWidth || 1024,
-        height: opts.maxHeight || 1024,
-        format: 'jpeg',
-        originalSize: 0,
-        optimizedSize: 0,
-        compressionRatio: 0,
-      };
-    }
+    // Always use fallback instead of throwing - ensures service continues working
+    console.warn('⚠️  Using unoptimized image as fallback');
     
-    throw new Error(
-      `Failed to optimize image: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
+    // Return the original image in a format that will work with AI
+    const fallbackData = input.startsWith('data:') 
+      ? input 
+      : input.startsWith('http') 
+        ? input // Keep URLs as-is for AI to fetch directly
+        : `data:image/jpeg;base64,${input}`;
+    
+    return {
+      data: fallbackData,
+      width: opts.maxWidth || 1024,
+      height: opts.maxHeight || 1024,
+      format: 'jpeg',
+      originalSize: 0,
+      optimizedSize: 0,
+      compressionRatio: 0,
+    };
   }
 }
 

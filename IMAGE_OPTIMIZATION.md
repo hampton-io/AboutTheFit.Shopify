@@ -6,6 +6,8 @@ This document describes the image optimization system that reduces AI token usag
 
 ## Why Image Optimization?
 
+### User Photos (Optimized)
+
 Before optimization, user-uploaded images could be:
 - **Large file sizes** (5-10MB+) - expensive in terms of AI tokens
 - **High resolution** (4000x3000px+) - slower processing
@@ -17,6 +19,13 @@ After optimization:
 - ✅ **Standardized format** (JPEG)
 - ✅ **Lower AI costs** - fewer tokens processed
 - ✅ **Faster processing** - quicker AI responses
+
+### Product Images (NOT Optimized)
+
+Product images from Shopify are **already optimized** by Shopify's CDN, so we skip optimization for them. This:
+- ✅ Reduces processing time
+- ✅ Avoids unnecessary work
+- ✅ Uses Shopify's high-quality optimized images directly
 
 ## Implementation
 
@@ -70,19 +79,21 @@ format: 'jpeg',            // Output format
 
 ### Automatic Optimization
 
-Images are automatically optimized in the try-on creation flow:
+Only user photos are automatically optimized in the try-on creation flow:
 
 ```typescript
 // In api.proxy.tryon.create.tsx
-const optimizedImages = await optimizeImagesForTryOn({
-  userPhoto: actualUserPhoto,
-  clothingImage: productImage,
+// Optimize user photo only (product images are already optimized by Shopify)
+const optimizedUserPhoto = await optimizeImage(actualUserPhoto, {
+  maxWidth: 1024,
+  maxHeight: 1024,
+  quality: 85,
 });
 
-// Use optimized images with AI
+// Use optimized user photo with AI
 const aiResult = await virtualTryOnAI.generateTryOn({
-  userPhoto: optimizedImages.userPhoto,
-  clothingImage: optimizedImages.clothingImage,
+  userPhoto: optimizedUserPhoto.data,
+  clothingImage: productImage, // Product image used as-is
   clothingName: productTitle,
 });
 ```
@@ -108,13 +119,15 @@ console.log(`Saved ${result.compressionRatio.toFixed(1)}%`);
 The optimization service logs detailed statistics:
 
 ```
+🖼️  Optimizing user photo before AI processing...
+📥 Fetching image from URL...
 📏 Original image size: 3.45 MB
-📐 Original dimensions: 3024x4032
+📐 Original dimensions: 3024x4032 (jpeg)
 📏 Optimized image size: 234.12 KB
 📐 Optimized dimensions: 768x1024
 🗜️  Compression ratio: 93.2% reduction
-💾 Total size reduction: 6.89 MB → 468.24 KB
-📊 Total savings: 93.2%
+✅ User photo optimized successfully
+💰 User photo size reduced by 93.2% - saving tokens and costs!
 ```
 
 ## Deployment on Vercel
@@ -207,11 +220,12 @@ With 1,000 try-ons per month:
 
 ## Best Practices
 
-1. ✅ **Always optimize before AI** - Never send raw user uploads to AI
-2. ✅ **Monitor logs** - Check optimization statistics regularly
-3. ✅ **Test after deployment** - Verify Sharp works in production
-4. ✅ **Keep Sharp updated** - Regular updates include performance improvements
-5. ✅ **Use JPEG format** - Best compression for photos
+1. ✅ **Optimize user photos only** - Product images are already optimized by Shopify
+2. ✅ **Never send raw user uploads to AI** - Always optimize first
+3. ✅ **Monitor logs** - Check optimization statistics regularly
+4. ✅ **Test after deployment** - Verify Sharp works in production
+5. ✅ **Keep Sharp updated** - Regular updates include performance improvements
+6. ✅ **Use JPEG format** - Best compression for photos
 
 ## Future Enhancements
 

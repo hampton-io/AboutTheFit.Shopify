@@ -33,11 +33,13 @@ Features:
 ### 3. Integrated Into Try-On Flow
 **File:** `app/routes/api.proxy.tryon.create.tsx`
 
-Images are now automatically optimized before being sent to AI:
+User photos are now automatically optimized before being sent to AI:
 ```typescript
-const optimizedImages = await optimizeImagesForTryOn({
-  userPhoto: actualUserPhoto,
-  clothingImage: productImage,
+// Only optimize user photos (product images are already optimized by Shopify)
+const optimizedUserPhoto = await optimizeImage(actualUserPhoto, {
+  maxWidth: 1024,
+  maxHeight: 1024,
+  quality: 85,
 });
 ```
 
@@ -108,14 +110,15 @@ Check your Vercel function logs for optimization statistics:
 ## 🔍 How It Works
 
 1. User uploads a photo on the storefront
-2. **[NEW]** Image is automatically optimized:
+2. **[NEW]** User photo is automatically optimized:
    - Resized to max 1024x1024
    - Compressed to ~85% quality
    - Converted to JPEG
    - Reduced by 50-95%
-3. Optimized image sent to AI (fewer tokens!)
-4. AI processes faster and cheaper
-5. Result returned to customer
+3. Product image used as-is (already optimized by Shopify CDN)
+4. Optimized user photo + product image sent to AI (fewer tokens!)
+5. AI processes faster and cheaper
+6. Result returned to customer
 
 ## ⚠️ Error Handling
 
