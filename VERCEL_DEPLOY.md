@@ -115,8 +115,8 @@ CREATE TABLE "session" (
 -- Create enum type
 CREATE TYPE "TryOnStatus" AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED');
 
--- Create TryOnRequest table
-CREATE TABLE "TryOnRequest" (
+-- Create try_on_request table
+CREATE TABLE "try_on_request" (
   "id" TEXT PRIMARY KEY,
   "shop" TEXT NOT NULL,
   "productId" TEXT NOT NULL,
@@ -131,24 +131,27 @@ CREATE TABLE "TryOnRequest" (
   "updatedAt" TIMESTAMP NOT NULL
 );
 
-CREATE INDEX "TryOnRequest_shop_idx" ON "TryOnRequest"("shop");
-CREATE INDEX "TryOnRequest_status_idx" ON "TryOnRequest"("status");
-CREATE INDEX "TryOnRequest_createdAt_idx" ON "TryOnRequest"("createdAt");
+CREATE INDEX "try_on_request_shop_idx" ON "try_on_request"("shop");
+CREATE INDEX "try_on_request_status_idx" ON "try_on_request"("status");
+CREATE INDEX "try_on_request_createdAt_idx" ON "try_on_request"("createdAt");
 
--- Create AppMetadata table
-CREATE TABLE "AppMetadata" (
+-- Create app_metadata table
+CREATE TABLE "app_metadata" (
   "id" TEXT PRIMARY KEY,
   "shop" TEXT UNIQUE NOT NULL,
   "creditsUsed" INTEGER DEFAULT 0 NOT NULL,
   "creditsLimit" INTEGER DEFAULT 10 NOT NULL,
+  "productLimit" INTEGER DEFAULT 3 NOT NULL,
   "isActive" BOOLEAN DEFAULT true NOT NULL,
+  "subscriptionCreatedAt" TIMESTAMP,
+  "lastResetDate" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
   "settings" JSONB,
   "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
   "updatedAt" TIMESTAMP NOT NULL
 );
 
--- Create ProductTryOnSettings table
-CREATE TABLE "ProductTryOnSettings" (
+-- Create product_try_on_settings table
+CREATE TABLE "product_try_on_settings" (
   "id" TEXT PRIMARY KEY,
   "shop" TEXT NOT NULL,
   "productId" TEXT NOT NULL,
@@ -160,8 +163,8 @@ CREATE TABLE "ProductTryOnSettings" (
   UNIQUE("shop", "productId")
 );
 
-CREATE INDEX "ProductTryOnSettings_shop_idx" ON "ProductTryOnSettings"("shop");
-CREATE INDEX "ProductTryOnSettings_tryOnEnabled_idx" ON "ProductTryOnSettings"("tryOnEnabled");
+CREATE INDEX "product_try_on_settings_shop_idx" ON "product_try_on_settings"("shop");
+CREATE INDEX "product_try_on_settings_tryOnEnabled_idx" ON "product_try_on_settings"("tryOnEnabled");
 ```
 
 ## Step 7: Deploy

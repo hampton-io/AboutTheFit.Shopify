@@ -53,6 +53,7 @@ model TryOnRequest {
   @@index([shop])
   @@index([status])
   @@index([createdAt])
+  @@map("try_on_request")
 }
 
 enum TryOnStatus {
@@ -74,6 +75,8 @@ model AppMetadata {
   settings              Json?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+
+  @@map("app_metadata")
 }
 
 model ProductTryOnSettings {
@@ -89,4 +92,5 @@ model ProductTryOnSettings {
   @@unique([shop, productId])
   @@index([shop])
   @@index([tryOnEnabled])
+  @@map("product_try_on_settings")
 }
