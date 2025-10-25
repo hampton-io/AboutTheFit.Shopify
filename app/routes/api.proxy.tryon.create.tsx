@@ -55,6 +55,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     console.log('📸 User photo received:', userPhoto ? 'Yes' : 'No');
     console.log('🎭 Canned image ID:', cannedImageId || 'None');
 
+    // Detect if userPhoto is a data URL (user upload) vs HTTP URL
+    const isUserUpload = userPhoto && userPhoto.startsWith('data:');
+    if (isUserUpload) {
+      console.log('✅ Detected user-uploaded photo (data URL) - cache will NOT be used');
+    }
+
     if (!productId || !productTitle || !productImage) {
       return Response.json(
         { success: false, error: 'Missing required fields' },
@@ -70,8 +76,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       );
     }
 
-    // If using a canned image, check the cache first
-    if (cannedImageId) {
+    // CRITICAL: Cache is ONLY used for canned images, NOT for user-uploaded photos
+    // If user provides their own photo, we skip cache even if cannedImageId is somehow present
+    const useCannedImage = !userPhoto && cannedImageId;
+    
+    // SAFETY CHECK: If both are provided, that's a bug in the frontend
+    if (userPhoto && cannedImageId) {
+      console.warn('⚠️  WARNING: Both userPhoto and cannedImageId received! Using userPhoto (no cache).');
+      console.warn('⚠️  This indicates a frontend bug - these should be mutually exclusive.');
+    }
+
+    // If using a canned image (and no user photo), check the cache first
+    if (useCannedImage) {
       console.log('🔍 Checking cache for canned image:', cannedImageId);
       
       // Verify the canned image exists
@@ -119,13 +135,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
       console.log('❌ Cache miss. Generating new try-on...');
+    } else if (userPhoto) {
+      console.log('📸 Using user-uploaded photo (cache not applicable)');
     }
 
     // Determine the actual user photo to use
     let actualUserPhoto = userPhoto;
     let actualCannedImage = null;
     
-    if (cannedImageId) {
+    // Only use canned image if no user photo was provided
+    if (!userPhoto && cannedImageId) {
       actualCannedImage = await getCannedImageById(cannedImageId);
       if (actualCannedImage) {
         actualUserPhoto = actualCannedImage.imageUrl;
@@ -141,7 +160,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       userPhotoUrl: actualUserPhoto || 'data:image/jpeg;base64,...',
       metadata: {
         createdVia: 'storefront',
-        cannedImageId: cannedImageId || null,
+        cannedImageId: userPhoto ? null : (cannedImageId || null), // Only set if using canned image
+        isUserUploaded: !!userPhoto,
         timestamp: new Date().toISOString(),
       },
     });
@@ -227,8 +247,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       },
     });
 
-    // If using a canned image, cache the result for future use
-    if (cannedImageId && aiResult.resultImage) {
+    // If using a canned image (NOT user-uploaded photo), cache the result for future use
+    if (!userPhoto && cannedImageId && aiResult.resultImage) {
       console.log('💾 Caching result for canned image:', cannedImageId);
       try {
         await upsertCachedTryOn({

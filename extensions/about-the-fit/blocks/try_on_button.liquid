@@ -550,6 +550,8 @@
       
       // Store in memory and localStorage
       window['tryOnPhoto_' + blockId] = photoData;
+      // Clear canned image ID since user is uploading their own photo
+      window['cannedImageId_' + blockId] = null;
       localStorage.setItem('aboutTheFit_userPhoto', photoData);
     };
     reader.readAsDataURL(file);
@@ -698,12 +700,22 @@
         productImage: productImage,
       };
       
-      // Include either cannedImageId or userPhoto
-      if (cannedImageId) {
-        requestBody.cannedImageId = cannedImageId;
-        console.log('🎭 Using canned image:', cannedImageId);
-      } else {
+      // CRITICAL: Always prioritize user-uploaded photos over canned images
+      // User uploads are data URLs (start with "data:"), canned images are HTTP(S) URLs
+      const isUserUpload = photoData && photoData.startsWith('data:');
+      
+      if (isUserUpload) {
+        // User uploaded their own photo - NEVER use cache
         requestBody.userPhoto = photoData;
+        console.log('📸 Using user-uploaded photo (NO CACHE)');
+      } else if (cannedImageId) {
+        // Using a canned/pre-selected image - cache is allowed
+        requestBody.cannedImageId = cannedImageId;
+        console.log('🎭 Using canned image:', cannedImageId, '(cache enabled)');
+      } else {
+        // Fallback: treat as user photo
+        requestBody.userPhoto = photoData;
+        console.log('📸 Using photo data as user upload');
       }
       
       const response = await fetch(API_URL, {
