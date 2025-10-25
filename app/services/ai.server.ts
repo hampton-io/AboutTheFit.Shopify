@@ -66,6 +66,12 @@ export interface TryOnResponse {
   error?: string;
   analysisText?: string; // For text-only responses
   code?: 'NO_IMAGE' | 'TEXT_ONLY' | 'GENERATION_ERROR' | 'INVALID_INPUT';
+  tokenUsage?: {
+    promptTokens: number;
+    responseTokens: number;
+    totalTokens: number;
+    cachedTokens?: number;
+  };
 }
 
 export class VirtualTryOnAI {
@@ -167,7 +173,7 @@ Final Output Requirement:
           
           // Maximum tokens for image generation (8192 is the limit for Gemini 2.5 Flash Image)
           // Higher token count = higher quality images with more detail
-          maxOutputTokens: 8192,
+          maxOutputTokens: 4000,
           
           // Presence/frequency penalties are primarily for text generation
           // Set to 0 as they don't significantly impact image generation
@@ -178,12 +184,47 @@ Final Output Requirement:
 
       console.log('✅ AI generation complete');
 
+      // Log token usage for cost tracking
+      if (response.usageMetadata) {
+        const usage = response.usageMetadata;
+        console.log('💰 Token Usage:');
+        console.log(`   📝 Prompt tokens: ${usage.promptTokenCount || 0}`);
+        console.log(`   🎨 Response tokens: ${usage.candidatesTokenCount || 0}`);
+        console.log(`   📊 Total tokens: ${usage.totalTokenCount || 0}`);
+        if (usage.cachedContentTokenCount) {
+          console.log(`   ⚡ Cached tokens: ${usage.cachedContentTokenCount}`);
+        }
+        
+        // Detailed breakdown by modality (if available)
+        if (usage.promptTokensDetails && usage.promptTokensDetails.length > 0) {
+          console.log('   📸 Prompt breakdown:');
+          usage.promptTokensDetails.forEach((detail) => {
+            console.log(`      - ${detail.modality}: ${detail.tokenCount} tokens`);
+          });
+              }
+        if (usage.candidatesTokensDetails && usage.candidatesTokensDetails.length > 0) {
+          console.log('   🎯 Response breakdown:');
+          usage.candidatesTokensDetails.forEach((detail) => {
+            console.log(`      - ${detail.modality}: ${detail.tokenCount} tokens`);
+          });
+              }
+            }
+
       // Use the improved error handling
       const resultImage = handleApiResponse(response);
-                
-                return {
-                  success: true,
-                  resultImage,
+      
+      // Extract token usage for the response
+      const tokenUsage = response.usageMetadata ? {
+        promptTokens: response.usageMetadata.promptTokenCount || 0,
+        responseTokens: response.usageMetadata.candidatesTokenCount || 0,
+        totalTokens: response.usageMetadata.totalTokenCount || 0,
+        cachedTokens: response.usageMetadata.cachedContentTokenCount,
+      } : undefined;
+
+      return {
+        success: true,
+        resultImage,
+        tokenUsage,
       };
     } catch (error) {
       console.error('Error generating try-on:', error);
