@@ -1,18 +1,52 @@
 import { PrismaClient } from "@prisma/client";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { attachDatabasePool } from "@vercel/functions";
 
-// Recommended pattern from Prisma React Router 7 docs
-// https://www.prisma.io/docs/guides/react-router-7
+// Global types for caching
 const globalForPrisma = global as unknown as { 
-  prisma: PrismaClient | undefined
+  prisma: PrismaClient | undefined;
+  pool: Pool | undefined;
 }
 
-const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+// Lazy initialization function for the connection pool
+function getPool(): Pool {
+  if (!globalForPrisma.pool) {
+    const pool = new Pool({ 
+      connectionString: process.env.DATABASE_URL 
+    });
+    
+    // Attach pool for proper Vercel Fluid compute handling (only on Vercel)
+    if (process.env.VERCEL) {
+      attachDatabasePool(pool);
+    }
+    
+    globalForPrisma.pool = pool;
+  }
+  return globalForPrisma.pool;
+}
+
+// Lazy initialization of Prisma Client
+function getPrismaClient(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    const pool = getPool();
+    const adapter = new PrismaPg(pool);
+    
+    globalForPrisma.prisma = new PrismaClient({
+      adapter,
+      log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    });
+  }
+  return globalForPrisma.prisma;
+}
+
+// Export a Proxy that lazily initializes the Prisma Client
+const prisma = new Proxy({} as PrismaClient, {
+  get(target, prop) {
+    const client = getPrismaClient();
+    return client[prop as keyof PrismaClient];
+  }
 })
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma
-}
 
 export default prisma;
 
