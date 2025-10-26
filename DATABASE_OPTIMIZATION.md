@@ -1,21 +1,26 @@
 # Database Connection Optimization for Vercel
 
 ## Problem
-Previously, the database connection pool was being initialized immediately when `db.server.ts` was imported, even for requests that never touched the database (like 404 pages). This happened because:
+Previously, the database connection pool was being initialized immediately when `db.server.ts` was imported, even for requests that never touched the database (like the landing page and 404s). This happened because:
 
-1. `entry.server.tsx` imports `shopify.server.ts` for every request
-2. `shopify.server.ts` imports `db.server.ts` 
-3. The old `db.server.ts` created the connection pool at module load time
+1. `entry.server.tsx` called `addDocumentResponseHeaders()` for **every** request
+2. This triggered `shopify.server.ts` to initialize `shopifyApp()` at module load
+3. `shopifyApp()` creates `PrismaSessionStorage` which immediately queries the database (`prisma.session.count()`)
+4. The old `db.server.ts` created the connection pool at module load time
 
 This caused unnecessary database connections for:
+- Landing page (`/`)
+- Privacy and Terms pages
 - 404 pages
 - Static asset requests
 - Health checks
-- Any request that ultimately didn't need the database
+- Any request that didn't need Shopify authentication
 
-## Solution: Lazy Initialization
+## Solution: Multi-Layer Lazy Initialization
 
-We implemented **lazy initialization** using a JavaScript Proxy pattern:
+We implemented **three layers of lazy initialization**:
+
+### Layer 1: Lazy Prisma Client (db.server.ts)
 
 ```typescript
 // Connection pool and Prisma Client are only created when first accessed
@@ -27,12 +32,53 @@ const prisma = new Proxy({} as PrismaClient, {
 })
 ```
 
+### Layer 2: Lazy Shopify App (shopify.server.ts)
+
+```typescript
+// Shopify app (including PrismaSessionStorage) only created when needed
+let shopify: ReturnType<typeof shopifyApp> | undefined;
+
+function getShopify() {
+  if (!shopify) {
+    shopify = shopifyApp({
+      sessionStorage: new PrismaSessionStorage(prisma), // Triggers DB on first call
+      // ... other config
+    });
+  }
+  return shopify;
+}
+
+export const authenticate = (...args) => getShopify().authenticate(...args);
+export const login = (...args) => getShopify().login(...args);
+// ... other exports
+```
+
+### Layer 3: Conditional Header Addition (entry.server.tsx)
+
+```typescript
+// Only call Shopify functions for app routes
+const isAppRoute = url.pathname.startsWith('/app') || url.pathname.startsWith('/auth');
+
+if (isAppRoute) {
+  addDocumentResponseHeaders(request, responseHeaders);
+}
+```
+
 ### How It Works
 
-1. **Import time**: When `db.server.ts` is imported, NO database connection is created
-2. **First use**: When code tries to use `prisma.someModel.query()`, the Proxy intercepts it
-3. **Initialization**: Only then does it create the Pool, adapter, and Prisma Client
-4. **Caching**: Subsequent uses reuse the same connection pool
+1. **Landing page request** (`/`):
+   - `entry.server.tsx` skips `addDocumentResponseHeaders` ✅
+   - No Shopify app initialization ✅
+   - No database connection ✅
+
+2. **App route request** (`/app`):
+   - `entry.server.tsx` calls `addDocumentResponseHeaders` 
+   - This calls `getShopify()` → initializes Shopify app
+   - `PrismaSessionStorage` created → triggers `getPrismaClient()`
+   - Database connection pool created on first query ✅
+
+3. **Subsequent requests**:
+   - Reuses cached Shopify app and Prisma Client ✅
 
 ## Benefits
 
@@ -58,6 +104,22 @@ Our implementation now follows Prisma's latest best practices for Vercel:
 - [Prisma Vercel Deployment Guide](https://www.prisma.io/docs/orm/prisma-client/deployment/serverless/deploy-to-vercel)
 - [Prisma without Rust Binaries](https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/generating-prisma-client#using-prisma-orm-without-rust-binaries)
 - [Vercel Fluid Compute](https://vercel.com/docs/functions/runtimes)
+
+## Fixing the WASM Error
+
+If you see this error after updating to `engineType = "client"`:
+```
+ENOENT: no such file or directory, open '/var/task/node_modules/.prisma/client/query_compiler_bg.wasm'
+```
+
+This means the old Prisma Client cache needs to be cleared:
+```bash
+rm -rf node_modules/.prisma
+npx prisma generate
+npm run build
+```
+
+The new `engineType = "client"` doesn't use WASM files, so this error indicates stale cached files.
 
 ## Implementation Details
 

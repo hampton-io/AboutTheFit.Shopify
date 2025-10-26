@@ -40,25 +40,77 @@ function parseCustomDomains(): string[] {
   return Array.from(new Set(list));
 }
 
-const shopify = shopifyApp({
-  apiKey: process.env.SHOPIFY_API_KEY,
-  apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
-  apiVersion: ApiVersion.October25,
-  scopes: process.env.SCOPES?.split(","),
-  appUrl: getAppUrl(),
-  authPathPrefix: "/auth",
-  sessionStorage: new PrismaSessionStorage(prisma),
-  distribution: AppDistribution.AppStore,
-  ...(parseCustomDomains().length
-    ? { customShopDomains: parseCustomDomains() }
-    : {}),
+// Lazy initialization to avoid DB connections on non-authenticated routes
+let shopify: ReturnType<typeof shopifyApp> | undefined;
+
+function getShopify() {
+  if (!shopify) {
+    shopify = shopifyApp({
+      apiKey: process.env.SHOPIFY_API_KEY,
+      apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
+      apiVersion: ApiVersion.October25,
+      scopes: process.env.SCOPES?.split(","),
+      appUrl: getAppUrl(),
+      authPathPrefix: "/auth",
+      sessionStorage: new PrismaSessionStorage(prisma),
+      distribution: AppDistribution.AppStore,
+      ...(parseCustomDomains().length
+        ? { customShopDomains: parseCustomDomains() }
+        : {}),
+    });
+  }
+  return shopify;
+}
+
+// Type helper for shopify app return type
+type ShopifyApp = ReturnType<typeof shopifyApp>;
+
+export default getShopify;
+export const apiVersion = ApiVersion.October25;
+
+// Lazy getters for Shopify app methods
+export const addDocumentResponseHeaders = (request: Request, headers: Headers) => 
+  getShopify().addDocumentResponseHeaders(request, headers);
+
+// Create proxies that lazily access the Shopify app properties
+export const authenticate = new Proxy({} as ShopifyApp['authenticate'], {
+  get: (_target, prop) => {
+    const shopifyInstance = getShopify();
+    const value = shopifyInstance.authenticate[prop as keyof ShopifyApp['authenticate']];
+    return typeof value === 'function' ? value.bind(shopifyInstance.authenticate) : value;
+  }
 });
 
-export default shopify;
-export const apiVersion = ApiVersion.October25;
-export const addDocumentResponseHeaders = shopify.addDocumentResponseHeaders;
-export const authenticate = shopify.authenticate;
-export const unauthenticated = shopify.unauthenticated;
-export const login = shopify.login;
-export const registerWebhooks = shopify.registerWebhooks;
-export const sessionStorage = shopify.sessionStorage;
+export const unauthenticated = new Proxy({} as ShopifyApp['unauthenticated'], {
+  get: (_target, prop) => {
+    const shopifyInstance = getShopify();
+    const value = shopifyInstance.unauthenticated[prop as keyof ShopifyApp['unauthenticated']];
+    return typeof value === 'function' ? value.bind(shopifyInstance.unauthenticated) : value;
+  }
+});
+
+export const login = new Proxy({} as ShopifyApp['login'], {
+  get: (_target, prop) => {
+    const shopifyInstance = getShopify();
+    const value = shopifyInstance.login[prop as keyof ShopifyApp['login']];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return typeof value === 'function' ? (value as any).bind(shopifyInstance.login) : value;
+  }
+});
+
+export const registerWebhooks = new Proxy({} as ShopifyApp['registerWebhooks'], {
+  get: (_target, prop) => {
+    const shopifyInstance = getShopify();
+    const value = shopifyInstance.registerWebhooks[prop as keyof ShopifyApp['registerWebhooks']];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return typeof value === 'function' ? (value as any).bind(shopifyInstance.registerWebhooks) : value;
+  }
+});
+
+export const sessionStorage = new Proxy({} as ShopifyApp['sessionStorage'], {
+  get: (_target, prop) => {
+    const shopifyInstance = getShopify();
+    const value = shopifyInstance.sessionStorage[prop as keyof ShopifyApp['sessionStorage']];
+    return typeof value === 'function' ? value.bind(shopifyInstance.sessionStorage) : value;
+  }
+});

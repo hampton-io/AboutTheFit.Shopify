@@ -14,7 +14,13 @@ export default async function handleRequest(
   responseHeaders: Headers,
   reactRouterContext: EntryContext
 ) {
-  addDocumentResponseHeaders(request, responseHeaders);
+  // Only add Shopify headers for app routes (not landing page, privacy, terms, etc.)
+  const url = new URL(request.url);
+  const isAppRoute = url.pathname.startsWith('/app') || url.pathname.startsWith('/auth');
+  
+  if (isAppRoute) {
+    addDocumentResponseHeaders(request, responseHeaders);
+  }
   const userAgent = request.headers.get("user-agent");
   const callbackName = isbot(userAgent ?? '')
     ? "onAllReady"
