@@ -79,40 +79,15 @@ function getPrismaClient(): PrismaClient {
   return globalForPrisma.prisma;
 }
 
-// For PrismaSessionStorage compatibility, we need to return the actual client
-// The lazy initialization happens on first property access
-let exportedClient: PrismaClient | undefined;
-
+// Simple Proxy for lazy initialization
+// Only initializes Prisma Client when first accessed
 const prisma = new Proxy({} as PrismaClient, {
-  get(target, prop) {
-    if (!exportedClient) {
-      exportedClient = getPrismaClient();
-      console.log('[Prisma] Client initialized and cached');
-    }
-    const value = exportedClient[prop as keyof PrismaClient];
-    return value;
-  },
-  // Handle property checks like 'session' in prisma
-  has(target, prop) {
-    if (!exportedClient) {
-      exportedClient = getPrismaClient();
-    }
-    return prop in exportedClient;
-  },
-  // Handle Object.keys and property enumeration
-  ownKeys(target) {
-    if (!exportedClient) {
-      exportedClient = getPrismaClient();
-    }
-    return Reflect.ownKeys(exportedClient);
-  },
-  getOwnPropertyDescriptor(target, prop) {
-    if (!exportedClient) {
-      exportedClient = getPrismaClient();
-    }
-    return Reflect.getOwnPropertyDescriptor(exportedClient, prop);
+  get(_target, prop) {
+    const client = getPrismaClient();
+    const value = client[prop as keyof PrismaClient];
+    return typeof value === 'function' ? value.bind(client) : value;
   }
-})
+});
 
 export default prisma;
 
