@@ -18,7 +18,16 @@ function getPool(): Pool {
       throw new Error('DATABASE_URL environment variable is required');
     }
     
-    if (process.env.NODE_ENV === 'development') {
+    // Parse connection string to log (without password)
+    try {
+      const url = new URL(connectionString);
+      console.log('[Prisma] Initializing connection pool to:', {
+        host: url.hostname,
+        port: url.port,
+        database: url.pathname,
+        params: url.search,
+      });
+    } catch (e) {
       console.log('[Prisma] Initializing connection pool');
     }
     
@@ -49,17 +58,54 @@ function getPrismaClient(): PrismaClient {
     
     globalForPrisma.prisma = new PrismaClient({
       adapter,
-      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+      // Always log errors, and queries in development for debugging
+      log: [
+        { level: 'error', emit: 'stdout' },
+        { level: 'warn', emit: 'stdout' },
+        ...(process.env.NODE_ENV === "development" ? [{ level: 'query' as const, emit: 'stdout' as const }] : [])
+      ],
     });
+    
+    // Test the connection immediately
+    globalForPrisma.prisma.$connect()
+      .then(() => console.log('[Prisma] Database connection successful'))
+      .catch((err) => console.error('[Prisma] Database connection failed:', err.message));
   }
   return globalForPrisma.prisma;
 }
 
-// Export a Proxy that lazily initializes the Prisma Client
+// For PrismaSessionStorage compatibility, we need to return the actual client
+// The lazy initialization happens on first property access
+let exportedClient: PrismaClient | undefined;
+
 const prisma = new Proxy({} as PrismaClient, {
   get(target, prop) {
-    const client = getPrismaClient();
-    return client[prop as keyof PrismaClient];
+    if (!exportedClient) {
+      exportedClient = getPrismaClient();
+      console.log('[Prisma] Client initialized and cached');
+    }
+    const value = exportedClient[prop as keyof PrismaClient];
+    return value;
+  },
+  // Handle property checks like 'session' in prisma
+  has(target, prop) {
+    if (!exportedClient) {
+      exportedClient = getPrismaClient();
+    }
+    return prop in exportedClient;
+  },
+  // Handle Object.keys and property enumeration
+  ownKeys(target) {
+    if (!exportedClient) {
+      exportedClient = getPrismaClient();
+    }
+    return Reflect.ownKeys(exportedClient);
+  },
+  getOwnPropertyDescriptor(target, prop) {
+    if (!exportedClient) {
+      exportedClient = getPrismaClient();
+    }
+    return Reflect.getOwnPropertyDescriptor(exportedClient, prop);
   }
 })
 
