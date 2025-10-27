@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "npm run prisma:generate && react-router build",
-    "vercel-build": "rm -rf node_modules/.prisma && prisma generate && react-router build",
+    "vercel-build": "rm -rf node_modules/.prisma && rm -rf node_modules/@prisma/client && prisma generate && test ! -f node_modules/.prisma/client/query_compiler_bg.wasm && react-router build",
     "prisma:generate": "rm -rf node_modules/.prisma && prisma generate",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
