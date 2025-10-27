@@ -1,7 +1,7 @@
 {
   "functions": {
-    ".react-router/server/**": {
-      "includeFiles": "node_modules/.prisma/client/*.wasm"
+    "build/server/index.js": {
+      "includeFiles": "node_modules/.prisma/client/**"
     }
   }
 }
