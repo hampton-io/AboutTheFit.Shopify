@@ -68,11 +68,20 @@ function getPrismaClient(): PrismaClient {
     
     // Test the connection and session table access
     globalForPrisma.prisma.$connect()
-      .then(() => {
+      .then(async () => {
         console.log('[Prisma] Database connection successful');
         // Verify session model is accessible
         const sessionModel = globalForPrisma.prisma?.session;
         console.log('[Prisma] Session model accessible:', typeof sessionModel !== 'undefined');
+        
+        // Try to actually query the session table
+        try {
+          const count = await globalForPrisma.prisma?.session.count();
+          console.log('[Prisma] Session table query successful, count:', count);
+        } catch (err: any) {
+          console.error('[Prisma] Session table query failed:', err.message);
+          console.error('[Prisma] Error code:', err.code);
+        }
       })
       .catch((err) => console.error('[Prisma] Database connection failed:', err.message));
   }
