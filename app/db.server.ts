@@ -12,8 +12,21 @@ const globalForPrisma = global as unknown as {
 // Lazy initialization function for the connection pool
 function getPool(): Pool {
   if (!globalForPrisma.pool) {
+    const connectionString = process.env.DATABASE_URL;
+    
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is required');
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Prisma] Initializing connection pool');
+    }
+    
     const pool = new Pool({ 
-      connectionString: process.env.DATABASE_URL 
+      connectionString,
+      // Optimize for serverless - small pool per instance
+      // pgbouncer handles the actual database connection pooling
+      max: 1,
     });
     
     // Attach pool for proper Vercel Fluid compute handling (only on Vercel)
@@ -32,9 +45,11 @@ function getPrismaClient(): PrismaClient {
     const pool = getPool();
     const adapter = new PrismaPg(pool);
     
+    console.log('[Prisma] Creating PrismaClient with driver adapter');
+    
     globalForPrisma.prisma = new PrismaClient({
       adapter,
-      log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
     });
   }
   return globalForPrisma.prisma;

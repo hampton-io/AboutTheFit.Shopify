@@ -105,7 +105,9 @@ Our implementation now follows Prisma's latest best practices for Vercel:
 - [Prisma without Rust Binaries](https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/generating-prisma-client#using-prisma-orm-without-rust-binaries)
 - [Vercel Fluid Compute](https://vercel.com/docs/functions/runtimes)
 
-## Fixing the WASM Error
+## Troubleshooting
+
+### WASM Error
 
 If you see this error after updating to `engineType = "client"`:
 ```
@@ -120,6 +122,23 @@ npm run build
 ```
 
 The new `engineType = "client"` doesn't use WASM files, so this error indicates stale cached files.
+
+### "Session table does not exist" Error
+
+If you see `MissingSessionTableError` even though the table exists in your database:
+
+**Possible causes:**
+
+1. **Connection pooling with transactions** - Some Prisma operations require session-level features that pgbouncer in transaction mode doesn't support. For driver adapters, you should use `DATABASE_URL` with pgbouncer in **session mode** or use `DIRECT_URL`.
+
+2. **Schema not specified** - Ensure your connection string includes the schema if not using the default `public` schema.
+
+3. **Table name mismatch** - Verify the table is named `session` (lowercase) in your database.
+
+**Quick fix for Vercel:**
+Ensure both environment variables are set:
+- `DATABASE_URL` - Your pooled connection (for most operations)
+- `DIRECT_URL` - Direct connection (for migrations and schema introspection)
 
 ## Implementation Details
 
