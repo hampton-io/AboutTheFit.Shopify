@@ -1,4 +1,7 @@
 {
-  "framework": "react-router"
+  "functions": {
+    "**": {
+      "includeFiles": "node_modules/.prisma/client/*.wasm"
+    }
+  }
 }
-
