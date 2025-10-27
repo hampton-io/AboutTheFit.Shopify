@@ -1,6 +1,6 @@
 {
   "functions": {
-    "**": {
+    ".react-router/server/**": {
       "includeFiles": "node_modules/.prisma/client/*.wasm"
     }
   }
