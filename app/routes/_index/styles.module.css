@@ -91,6 +91,7 @@
   position: relative;
   z-index: 1;
   animation: fadeInUp 0.8s ease-out 0.25s backwards;
+  margin-bottom: 32px;
 }
 
 .videoContainer {
