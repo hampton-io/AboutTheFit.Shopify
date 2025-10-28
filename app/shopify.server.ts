@@ -89,21 +89,27 @@ export const unauthenticated = new Proxy({} as ShopifyApp['unauthenticated'], {
   }
 });
 
-export const login = new Proxy({} as ShopifyApp['login'], {
+export const login = new Proxy(function() {} as any, {
   get: (_target, prop) => {
     const shopifyInstance = getShopify();
     const value = shopifyInstance.login[prop as keyof ShopifyApp['login']];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return typeof value === 'function' ? (value as any).bind(shopifyInstance.login) : value;
+    return typeof value === 'function' ? value.bind(shopifyInstance.login) : value;
+  },
+  apply: (_target, thisArg, args) => {
+    const shopifyInstance = getShopify();
+    return shopifyInstance.login(...args);
   }
 });
 
-export const registerWebhooks = new Proxy({} as ShopifyApp['registerWebhooks'], {
+export const registerWebhooks = new Proxy(function() {} as any, {
   get: (_target, prop) => {
     const shopifyInstance = getShopify();
     const value = shopifyInstance.registerWebhooks[prop as keyof ShopifyApp['registerWebhooks']];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return typeof value === 'function' ? (value as any).bind(shopifyInstance.registerWebhooks) : value;
+    return typeof value === 'function' ? value.bind(shopifyInstance.registerWebhooks) : value;
+  },
+  apply: (_target, thisArg, args) => {
+    const shopifyInstance = getShopify();
+    return shopifyInstance.registerWebhooks(...args);
   }
 });
 
