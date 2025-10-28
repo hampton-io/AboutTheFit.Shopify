@@ -18,19 +18,6 @@ function getPool(): Pool {
       throw new Error('DATABASE_URL environment variable is required');
     }
     
-    // Parse connection string to log (without password)
-    try {
-      const url = new URL(connectionString);
-      console.log('[Prisma] Initializing connection pool to:', {
-        host: url.hostname,
-        port: url.port,
-        database: url.pathname,
-        params: url.search,
-      });
-    } catch (e) {
-      console.log('[Prisma] Initializing connection pool');
-    }
-    
     const pool = new Pool({ 
       connectionString,
       // Optimize for serverless - small pool per instance
@@ -54,36 +41,12 @@ function getPrismaClient(): PrismaClient {
     const pool = getPool();
     const adapter = new PrismaPg(pool);
     
-    console.log('[Prisma] Creating PrismaClient with driver adapter');
-    
     globalForPrisma.prisma = new PrismaClient({
       adapter,
-      // Always log errors, and queries in development for debugging
-      log: [
-        { level: 'error', emit: 'stdout' },
-        { level: 'warn', emit: 'stdout' },
-        ...(process.env.NODE_ENV === "development" ? [{ level: 'query' as const, emit: 'stdout' as const }] : [])
-      ],
+      log: process.env.NODE_ENV === "development" 
+        ? ['error', 'warn', 'query'] 
+        : ['error'],
     });
-    
-    // Test the connection and session table access
-    globalForPrisma.prisma.$connect()
-      .then(async () => {
-        console.log('[Prisma] Database connection successful');
-        // Verify session model is accessible
-        const sessionModel = globalForPrisma.prisma?.session;
-        console.log('[Prisma] Session model accessible:', typeof sessionModel !== 'undefined');
-        
-        // Try to actually query the session table
-        try {
-          const count = await globalForPrisma.prisma?.session.count();
-          console.log('[Prisma] Session table query successful, count:', count);
-        } catch (err: any) {
-          console.error('[Prisma] Session table query failed:', err.message);
-          console.error('[Prisma] Error code:', err.code);
-        }
-      })
-      .catch((err) => console.error('[Prisma] Database connection failed:', err.message));
   }
   return globalForPrisma.prisma;
 }
