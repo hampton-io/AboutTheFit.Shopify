@@ -143,7 +143,7 @@ export default function App() {
                 </div>
               )}
               <p className={styles.formHint}>
-                ✓ No credit card required ✓ 14-day free trial ✓ Setup in 2 minutes
+                ✓ No credit card required ✓ Free trial ✓ Setup in 2 minutes
               </p>
             </Form>
           )}
@@ -287,7 +287,7 @@ export default function App() {
               </div>
               {shopError && <p className={styles.formError}>{shopError}</p>}
               <p className={styles.formHint}>
-                ✓ 14-day free trial ✓ Cancel anytime ✓ No credit card required
+                ✓ Free trial ✓ Cancel anytime ✓ No credit card required
               </p>
             </Form>
           )}
