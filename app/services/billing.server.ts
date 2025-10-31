@@ -485,25 +485,40 @@ export async function getSubscriptionStatus(request: Request) {
 
 /**
  * Update shop plan in database
+ * Only updates limits if shop doesn't have custom limits set
  */
 async function updateShopPlan(shop: string, planKey: PlanKey): Promise<void> {
   const plan = PLANS[planKey];
   const now = new Date();
   
+  // Check if shop has custom limits
+  const existing = await prisma.appMetadata.findUnique({
+    where: { shop },
+    select: { hasCustomLimits: true },
+  });
+  
+  // Prepare the update data - only include limits if not custom
+  const updateData: any = {
+    isActive: true,
+    subscriptionCreatedAt: now,
+    lastResetDate: now,
+  };
+  
+  // Only update limits if shop doesn't have custom limits
+  if (!existing?.hasCustomLimits) {
+    updateData.creditsLimit = plan.credits;
+    updateData.productLimit = plan.productLimit;
+  }
+  
   await prisma.appMetadata.upsert({
     where: { shop },
-    update: {
-      creditsLimit: plan.credits,
-      productLimit: plan.productLimit,
-      isActive: true,
-      subscriptionCreatedAt: now,
-      lastResetDate: now,
-    },
+    update: updateData,
     create: {
       shop,
       creditsUsed: 0,
       creditsLimit: plan.credits,
       productLimit: plan.productLimit,
+      hasCustomLimits: false,
       isActive: true,
       subscriptionCreatedAt: now,
       lastResetDate: now,
@@ -603,5 +618,44 @@ export async function canUpgradeToPlan(
 
   // Can always upgrade to a higher tier
   return targetPlan.price > currentPlan.price;
+}
+
+/**
+ * Set custom limits for a shop
+ * This marks the shop as having custom limits, which prevents automatic limit updates
+ * 
+ * @param shop - The shop domain
+ * @param creditsLimit - Custom credits limit (-1 for unlimited)
+ * @param productLimit - Custom product limit (-1 for unlimited)
+ */
+export async function setCustomLimits(
+  shop: string,
+  creditsLimit: number,
+  productLimit: number
+): Promise<void> {
+  await prisma.appMetadata.update({
+    where: { shop },
+    data: {
+      creditsLimit,
+      productLimit,
+      hasCustomLimits: true,
+    },
+  });
+}
+
+/**
+ * Remove custom limits for a shop and revert to plan defaults
+ * 
+ * @param shop - The shop domain
+ */
+export async function removeCustomLimits(shop: string): Promise<void> {
+  await prisma.appMetadata.update({
+    where: { shop },
+    data: {
+      hasCustomLimits: false,
+    },
+  });
+  
+  // The next sync will update limits to plan defaults
 }
 
