@@ -73,7 +73,9 @@ function getIntervalDisplay(interval?: string | null): { short: string; long: st
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
-  return null;
+  return {
+    setupGuideVideoUrl: process.env.SETUP_GUIDE_VIDEO_URL || null,
+  };
 };
 
 interface Product {
@@ -94,6 +96,7 @@ interface Stats {
   creditsLimit: number;
   productLimit: number;
   daysUntilReset: number;
+  blockAddedToTheme?: boolean;
 }
 
 interface Subscription {
@@ -106,6 +109,7 @@ interface Subscription {
 }
 
 export default function Index() {
+  const loaderData = useLoaderData<typeof loader>();
   const shopify = useAppBridge();
   const productsFetcher = useFetcher<any>();
   const statsFetcher = useFetcher<any>();
@@ -200,16 +204,11 @@ export default function Index() {
 
   // Handle billing responses
   useEffect(() => {
-    console.log('🔔 billingFetcher.data changed:', billingFetcher.data);
-    console.log('🔔 billingFetcher.state:', billingFetcher.state);
-    
     if (billingFetcher.data?.success && billingFetcher.state === 'idle') {
       if (billingFetcher.data.confirmationUrl) {
-        console.log('✅ Redirecting to:', billingFetcher.data.confirmationUrl);
         window.location.href = billingFetcher.data.confirmationUrl;
       } else if (billingFetcher.data.message && showBillingModal) {
         // Success without confirmation URL (development mode) - only if modal is open
-        console.log('✅ Plan upgraded successfully (dev mode)');
         shopify.toast.show(billingFetcher.data.message);
         setShowBillingModal(false);
         // Reload subscription status and stats
@@ -219,7 +218,6 @@ export default function Index() {
         }, 100);
       }
     } else if (billingFetcher.data?.error) {
-      console.log('❌ Billing error:', billingFetcher.data.error);
       shopify.toast.show(billingFetcher.data.error, { isError: true });
     }
   }, [billingFetcher.data, billingFetcher.state, showBillingModal]);
@@ -239,104 +237,62 @@ export default function Index() {
   );
 
   return (
-    <s-page heading="About the Fit - Virtual Try-On">
-      {/* Setup Guide Banner - Only show if no try-ons have been done yet */}
-      {stats && stats.totalTryOns === 0 && stats.productsWithTryOn > 0 && (
+    <>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+      `}</style>
+      
+      <s-page heading="About the Fit - Virtual Try-On">
+        {/* Stats Cards - Reserve space to prevent layout shift */}
         <s-section>
-          <s-box padding="base" borderWidth="base" borderRadius="base" tone="info">
-            <s-stack direction="block" gap="base">
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <div style={{ fontSize: '20px' }}>ℹ️</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>
-                    Complete Your Setup
-                  </div>
-                  
-                  {/* Editor Activity Status */}
-                  {stats.editorActivityStatus === 'active' && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '16px',
+            minHeight: stats ? 'auto' : '400px', // Reserve space while loading
+          }}
+        >
+          {!stats ? (
+            // Skeleton loaders with exact dimensions
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <s-box key={i} padding="base" borderWidth="base" borderRadius="base">
+                  <s-stack direction="block" gap="base">
                     <div style={{ 
-                      marginBottom: '12px', 
-                      padding: '8px 12px', 
-                      backgroundColor: '#D1FAE5', 
-                      borderRadius: '6px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <span style={{ fontSize: '16px' }}>🟢</span>
-                      <s-text tone="success">
-                        <strong>Theme editor is open!</strong> You're currently customizing your theme
-                      </s-text>
-                    </div>
-                  )}
-                  
-                  {stats.editorActivityStatus === 'recent' && (
+                      height: '20px', 
+                      width: '60%', 
+                      backgroundColor: '#E5E7EB',
+                      borderRadius: '4px',
+                      animation: 'pulse 1.5s ease-in-out infinite'
+                    }} />
                     <div style={{ 
-                      marginBottom: '12px', 
-                      padding: '8px 12px', 
-                      backgroundColor: '#FEF3C7', 
-                      borderRadius: '6px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <span style={{ fontSize: '16px' }}>🟡</span>
-                      <s-text>
-                        <strong>Recently opened:</strong> We detected the theme editor was opened in the last 24 hours
-                      </s-text>
-                    </div>
-                  )}
-                  
-                  <s-text>
-                    You've enabled {stats.productsWithTryOn} {stats.productsWithTryOn === 1 ? 'product' : 'products'}, but we haven't seen any try-ons yet.
-                  </s-text>
-                  <div style={{ marginTop: '12px' }}>
-                    <s-text tone="emphasis">
-                      <strong>Next Step:</strong> Add the "Try It On" button to your theme
-                    </s-text>
-                  </div>
-                  <ol style={{ marginTop: '12px', marginLeft: '20px', lineHeight: '1.8' }}>
-                    <li>
-                      <s-text>Go to <strong>Online Store → Themes</strong> in your Shopify admin</s-text>
-                    </li>
-                    <li>
-                      <s-text>Click <strong>Customize</strong> on your active theme</s-text>
-                    </li>
-                    <li>
-                      <s-text>Navigate to a <strong>Product page</strong></s-text>
-                    </li>
-                    <li>
-                      <s-text>Click <strong>Add block</strong> and search for <strong>"About the Fit - Try It On"</strong></s-text>
-                    </li>
-                    <li>
-                      <s-text>Position the block where you want the button to appear</s-text>
-                    </li>
-                    <li>
-                      <s-text>Click <strong>Save</strong></s-text>
-                    </li>
-                  </ol>
-                  <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#FFF9E6', borderRadius: '8px' }}>
-                    <s-text tone="warning">
-                      💡 <strong>Tip:</strong> The button will only appear on products you've enabled below. Make sure to test with an enabled product!
-                    </s-text>
-                  </div>
-                </div>
-              </div>
-            </s-stack>
-          </s-box>
-        </s-section>
-      )}
-
-      {/* Stats Cards */}
-      {stats && (
-        <s-section>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '16px',
-            }}
-          >
+                      height: '40px', 
+                      width: '40%', 
+                      backgroundColor: '#E5E7EB',
+                      borderRadius: '4px',
+                      animation: 'pulse 1.5s ease-in-out infinite'
+                    }} />
+                    <div style={{ 
+                      height: '16px', 
+                      width: '80%', 
+                      backgroundColor: '#E5E7EB',
+                      borderRadius: '4px',
+                      animation: 'pulse 1.5s ease-in-out infinite'
+                    }} />
+                  </s-stack>
+                </s-box>
+              ))}
+            </>
+          ) : (
+            <>
             {/* Products with Try-On Enabled */}
             <s-box padding="base" borderWidth="base" borderRadius="base">
               <s-stack direction="block" gap="base">
@@ -520,34 +476,49 @@ export default function Index() {
                         Member since {new Date(subscription.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </div>
                     )}
-                    <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ 
+                      marginTop: '8px', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '8px',
+                      minHeight: '88px' // Reserve space for both buttons (40px + 40px + 8px gap)
+                    }}>
                       <s-button
                         variant="primary"
                         onClick={() => {
-                          console.log('🔵 Upgrade Plan button clicked');
                           setShowBillingModal(true);
                         }}
                         disabled={billingFetcher.state === 'submitting'}
                       >
                         {billingFetcher.state === 'submitting' ? 'Loading...' : subscription.price > 0 ? 'Change Plan' : 'Upgrade Plan'}
                       </s-button>
-                      {subscription.price > 0 && (
-                        <s-button
-                          variant="secondary"
-                          onClick={handleCancelSubscription}
-                          disabled={billingCancelFetcher.state === 'submitting'}
-                        >
-                          {billingCancelFetcher.state === 'submitting' ? 'Cancelling...' : 'Cancel Subscription'}
-                        </s-button>
-                      )}
+                      {/* Always render, but hide when not needed - prevents layout shift */}
+                      <div style={{ 
+                        opacity: subscription.price > 0 ? 1 : 0,
+                        pointerEvents: subscription.price > 0 ? 'auto' : 'none',
+                        minHeight: '40px' // Fixed height to reserve space
+                      }}>
+                        {subscription.price > 0 ? (
+                          <s-button
+                            variant="secondary"
+                            onClick={handleCancelSubscription}
+                            disabled={billingCancelFetcher.state === 'submitting'}
+                          >
+                            {billingCancelFetcher.state === 'submitting' ? 'Cancelling...' : 'Cancel Subscription'}
+                          </s-button>
+                        ) : (
+                          <div style={{ height: '40px' }} />
+                        )}
+                      </div>
                     </div>
                   </>
                 )}
               </s-stack>
             </s-box>
+            </>
+          )}
           </div>
         </s-section>
-      )}
 
       {/* Warning Banners */}
       {stats && stats.creditsLimit !== -1 && stats.creditsRemaining < stats.creditsLimit * 0.2 && (
@@ -620,12 +591,51 @@ export default function Index() {
 
           {/* Products List */}
           {isLoading ? (
-            <s-box padding="large">
-              <div style={{ textAlign: 'center' }}>
-                <s-spinner size="large" />
-                <s-text>Loading products...</s-text>
-              </div>
-            </s-box>
+            <s-stack direction="block" gap="base">
+              {/* Skeleton loaders matching product card height */}
+              {[1, 2, 3].map((i) => (
+                <s-box key={i} padding="base" borderWidth="base" borderRadius="base">
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '16px',
+                    minHeight: '76px' // Match actual product card height
+                  }}>
+                    <div style={{ 
+                      width: '60px', 
+                      height: '60px', 
+                      backgroundColor: '#E5E7EB',
+                      borderRadius: '8px',
+                      animation: 'pulse 1.5s ease-in-out infinite'
+                    }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ 
+                        height: '24px', 
+                        width: '70%', 
+                        backgroundColor: '#E5E7EB',
+                        borderRadius: '4px',
+                        marginBottom: '8px',
+                        animation: 'pulse 1.5s ease-in-out infinite'
+                      }} />
+                      <div style={{ 
+                        height: '16px', 
+                        width: '40%', 
+                        backgroundColor: '#E5E7EB',
+                        borderRadius: '4px',
+                        animation: 'pulse 1.5s ease-in-out infinite'
+                      }} />
+                    </div>
+                    <div style={{ 
+                      width: '80px', 
+                      height: '32px', 
+                      backgroundColor: '#E5E7EB',
+                      borderRadius: '16px',
+                      animation: 'pulse 1.5s ease-in-out infinite'
+                    }} />
+                  </div>
+                </s-box>
+              ))}
+            </s-stack>
           ) : filteredProducts.length === 0 ? (
             <s-box padding="large" borderWidth="base" borderRadius="base">
               <div style={{ textAlign: 'center' }}>
@@ -658,6 +668,9 @@ export default function Index() {
                       <img
                         src={product.image}
                         alt={product.title}
+                        width="60"
+                        height="60"
+                        loading="lazy"
                         style={{
                           width: '60px',
                           height: '60px',
@@ -712,6 +725,7 @@ export default function Index() {
                           handleToggle(product, e.target.checked)
                         }
                         disabled={toggleFetcher.state !== 'idle'}
+                        accessibilityLabel={`Toggle virtual try-on for ${product.title}`}
                       />
                     </div>
                   </div>
@@ -722,45 +736,183 @@ export default function Index() {
         </s-stack>
       </s-section>
 
-      {/* Help Section */}
-      <s-section slot="aside" heading="How it works">
-        <s-stack direction="block" gap="base">
-          <s-paragraph>
-            <strong>1. Enable try-on</strong> for products you want customers to
-            virtually try on
-          </s-paragraph>
-          <s-paragraph>
-            <strong>2. Customers upload</strong> their photo on the product page
-          </s-paragraph>
-          <s-paragraph>
-            <strong>3. AI generates</strong> a realistic image of them wearing
-            the product
-          </s-paragraph>
-          <s-paragraph>
-            <strong>4. Customers see</strong> how they look before buying
-          </s-paragraph>
-        </s-stack>
-      </s-section>
-
-      {/* Setup Section */}
-      <s-section slot="aside" heading="Add About the Fit to your product pages">
-        <s-stack direction="block" gap="base">
-          <s-paragraph>
-            Add the try-on button to your product pages so customers can see how items look on them before buying.
-          </s-paragraph>
-          <s-paragraph>
-            <strong>1. Go to Online Store</strong> → Themes
-          </s-paragraph>
-          <s-paragraph>
-            <strong>2. Click Customize</strong> on your active theme
-          </s-paragraph>
-          <s-paragraph>
-            <strong>3. Navigate to a Product page</strong>
-          </s-paragraph>
-          <s-paragraph>
-            <strong>4. Click Add app block</strong> and select "ATF - Try it on Button"
-          </s-paragraph>
-        </s-stack>
+      {/* Setup Guide - Always show with skeleton */}
+      <s-section slot="aside" heading={
+        !stats ? "Loading..." :
+        stats.totalTryOns > 0 ? "All systems go! 🎉" : 
+        stats.productsWithTryOn === 0 ? "Getting Started" : 
+        "Complete Your Setup"
+      }>
+        {!stats ? (
+          // Skeleton loader for setup guide
+          <s-stack direction="block" gap="base">
+            <div style={{ 
+              height: '40px', 
+              width: '100%', 
+              backgroundColor: '#E5E7EB',
+              borderRadius: '4px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+            {[1, 2, 3].map((i) => (
+              <div key={i} style={{ 
+                height: '80px', 
+                width: '100%', 
+                backgroundColor: '#E5E7EB',
+                borderRadius: '8px',
+                animation: 'pulse 1.5s ease-in-out infinite',
+                animationDelay: `${i * 0.1}s`
+              }} />
+            ))}
+          </s-stack>
+        ) : (
+          <s-stack direction="block" gap="base">
+            {stats.totalTryOns > 0 ? (
+              <s-paragraph>
+                <strong>Everything is working.</strong> Your virtual try-on is live and customers can try on products before buying.
+              </s-paragraph>
+            ) : stats.productsWithTryOn === 0 ? (
+              <s-paragraph>
+                <strong>Welcome!</strong> Let customers virtually try on your products before buying.
+              </s-paragraph>
+            ) : (
+              <s-paragraph>
+                You've enabled {stats.productsWithTryOn} {stats.productsWithTryOn === 1 ? 'product' : 'products'}. Almost there!
+              </s-paragraph>
+            )}
+            
+            {loaderData?.setupGuideVideoUrl && stats.totalTryOns === 0 && (
+              <div style={{ marginBottom: '12px' }}>
+                <a 
+                  href={loaderData.setupGuideVideoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '12px 24px',
+                    backgroundColor: '#FF0000',
+                    color: 'white',
+                    textDecoration: 'none',
+                    borderRadius: '4px',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    border: 'none',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)',
+                    minWidth: '200px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#CC0000';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.16)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#FF0000';
+                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.12)';
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19.615 5.481a2.516 2.516 0 0 0-1.771-1.782C16.274 3.333 10 3.333 10 3.333s-6.274 0-7.844.366A2.516 2.516 0 0 0 .385 5.481C0 7.056 0 10.334 0 10.334s0 3.277.385 4.852a2.516 2.516 0 0 0 1.771 1.782c1.57.367 7.844.367 7.844.367s6.274 0 7.844-.367a2.516 2.516 0 0 0 1.771-1.782c.385-1.575.385-4.852.385-4.852s0-3.278-.385-4.853z" fill="white"/>
+                    <path d="M8 13.167V7.5l5.333 2.834L8 13.167z" fill="#FF0000"/>
+                  </svg>
+                  Watch setup guide
+                </a>
+              </div>
+            )}
+            
+            {/* Step 1: Enable Products */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px', 
+              padding: '12px',
+              backgroundColor: stats.productsWithTryOn > 0 ? '#F0FDF4' : '#F9FAFB',
+              borderRadius: '8px',
+              border: stats.productsWithTryOn > 0 ? '2px solid #10B981' : '2px solid #E5E7EB'
+            }}>
+              <div style={{ fontSize: '20px', flexShrink: 0 }}>
+                {stats.productsWithTryOn > 0 ? '✅' : '1️⃣'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                  Enable products
+                </div>
+                <div style={{ fontSize: '14px', color: '#6B7280' }}>
+                  {stats.productsWithTryOn > 0 
+                    ? `${stats.productsWithTryOn} ${stats.productsWithTryOn === 1 ? 'product' : 'products'} enabled`
+                    : 'Enable try-on for products below'}
+                </div>
+              </div>
+            </div>
+            
+            {/* Step 2: Add to Theme */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px', 
+              padding: '12px',
+              backgroundColor: stats.blockAddedToTheme ? '#F0FDF4' : '#F9FAFB',
+              borderRadius: '8px',
+              border: stats.blockAddedToTheme ? '2px solid #10B981' : '2px solid #E5E7EB'
+            }}>
+              <div style={{ fontSize: '20px', flexShrink: 0 }}>
+                {stats.blockAddedToTheme ? '✅' : '2️⃣'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                  Add button to theme
+                </div>
+                {stats.blockAddedToTheme ? (
+                  <div style={{ 
+                    fontSize: '14px',
+                    color: '#059669',
+                    fontWeight: '600'
+                  }}>
+                    Block added successfully!
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '13px', color: '#6B7280', lineHeight: '1.5' }}>
+                    • Go to <strong>Online Store → Themes</strong><br/>
+                    • Click <strong>Customize</strong><br/>
+                    • Open a <strong>Product page</strong><br/>
+                    • Add <strong>"About the Fit - Try It On"</strong> block
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Step 3: First Try-On */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px', 
+              padding: '12px',
+              backgroundColor: stats.totalTryOns > 0 ? '#F0FDF4' : '#F9FAFB',
+              borderRadius: '8px',
+              border: stats.totalTryOns > 0 ? '2px solid #10B981' : '2px solid #E5E7EB'
+            }}>
+              <div style={{ fontSize: '20px', flexShrink: 0 }}>
+                {stats.totalTryOns > 0 ? '✅' : '3️⃣'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                  Get your first try-on
+                </div>
+                {stats.totalTryOns > 0 ? (
+                  <div style={{ 
+                    fontSize: '14px',
+                    color: '#059669',
+                    fontWeight: '600'
+                  }}>
+                    {stats.totalTryOns} try-on{stats.totalTryOns !== 1 ? 's' : ''} generated!
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '14px', color: '#6B7280' }}>
+                    We are waiting for your first try-on.
+                  </div>
+                )}
+              </div>
+            </div>
+          </s-stack>
+        )}
       </s-section>
 
       <s-section slot="aside" heading="Need help?">
@@ -804,7 +956,6 @@ export default function Index() {
               <h2 style={{ margin: 0 }}>Choose Your Plan</h2>
               <button
                 onClick={() => {
-                  console.log('🔴 Close button clicked');
                   setShowBillingModal(false);
                 }}
                 style={{
@@ -902,7 +1053,8 @@ export default function Index() {
           </div>
         </div>
       )}
-    </s-page>
+      </s-page>
+    </>
   );
 }
 

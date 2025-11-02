@@ -73,10 +73,12 @@ model AppMetadata {
   isActive              Boolean   @default(true)
   subscriptionCreatedAt DateTime?
   lastResetDate         DateTime  @default(now())
+  lastEditorActivity    DateTime? // Last time merchant opened theme editor with our block
   settings              Json?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  @@index([lastEditorActivity])
   @@map("app_metadata")
 }
 

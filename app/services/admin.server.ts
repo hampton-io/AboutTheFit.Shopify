@@ -1,6 +1,7 @@
-import type { AdminApiContext } from '@shopify/shopify-app-react-router/server';
+import type { AdminApiContext, Session } from '@shopify/shopify-app-react-router/server';
 import { searchProducts } from './products.server';
 import prisma from '../db.server';
+import { verifyBlockInstalled } from './theme-verification.server';
 
 export interface ProductWithTryOnStatus {
   id: string;
@@ -20,8 +21,7 @@ export interface DashboardStats {
   creditsLimit: number;
   productLimit: number;
   daysUntilReset: number;
-  lastEditorActivity?: string; // ISO timestamp of last theme editor activity
-  editorActivityStatus?: 'active' | 'recent' | 'never'; // Helper status for UI
+  blockAddedToTheme?: boolean; // Confirmed block was added to theme via server-side verification
 }
 
 /**
@@ -195,6 +195,7 @@ export async function bulkToggleProductTryOn(
  */
 export async function getDashboardStats(
   admin: AdminApiContext,
+  session: Session,
   shop: string
 ): Promise<DashboardStats> {
   const { checkAndResetMonthlyLimits } = await import('./billing.server');
@@ -234,21 +235,30 @@ export async function getDashboardStats(
   const daysSinceReset = Math.floor((now.getTime() - lastResetDate.getTime()) / (1000 * 60 * 60 * 24));
   const daysUntilReset = Math.max(0, 30 - daysSinceReset);
 
-  // Get last editor activity from settings
-  const lastEditorActivity = metadata?.settings && typeof metadata.settings === 'object' 
-    ? (metadata.settings as any).lastEditorActivity 
-    : undefined;
-
-  // Calculate editor activity status
-  let editorActivityStatus: 'active' | 'recent' | 'never' = 'never';
-  if (lastEditorActivity) {
-    const activityDate = new Date(lastEditorActivity);
-    const minutesSinceActivity = Math.floor((now.getTime() - activityDate.getTime()) / (1000 * 60));
+  // SERVER-SIDE VERIFICATION: Check if block is actually installed in theme
+  // This is much more reliable than client-side beacons!
+  const blockAddedToTheme = await verifyBlockInstalled(session, shop);
+  
+  // Store the result for faster subsequent checks (optional optimization)
+  if (blockAddedToTheme && metadata) {
+    const existingSettings = metadata.settings && typeof metadata.settings === 'object' 
+      ? metadata.settings as any 
+      : {};
     
-    if (minutesSinceActivity < 10) {
-      editorActivityStatus = 'active'; // Within last 10 minutes
-    } else if (minutesSinceActivity < 60 * 24) {
-      editorActivityStatus = 'recent'; // Within last 24 hours
+    // Only update if changed to avoid unnecessary writes
+    if (!existingSettings.blockAddedToTheme) {
+      await prisma.appMetadata.update({
+        where: { shop },
+        data: {
+          settings: {
+            ...existingSettings,
+            blockAddedToTheme: true,
+            lastVerified: new Date().toISOString(),
+          },
+        },
+      }).catch(() => {
+        // Ignore errors - this is just caching
+      });
     }
   }
 
@@ -261,8 +271,7 @@ export async function getDashboardStats(
     creditsLimit,
     productLimit,
     daysUntilReset,
-    lastEditorActivity,
-    editorActivityStatus,
+    blockAddedToTheme,
   };
 }
 

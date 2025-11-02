@@ -3,7 +3,7 @@
   This adds a "Try It On" button to product pages
 {% endcomment %}
 
-<div class="try-on-button-wrapper" data-product-id="{{ product.id }}" id="try-on-wrapper-{{ block.id }}" {% unless request.design_mode %}style="display: none;"{% endunless %}>
+<div class="try-on-button-wrapper" data-product-id="{{ product.id }}" id="try-on-wrapper-{{ block.id }}" {{ block.shopify_attributes }} {% unless request.design_mode %}style="display: none;"{% endunless %}>
   <button 
     type="button" 
     class="try-on-button"
@@ -395,7 +395,7 @@
 
 <script>
   // Check if try-on is enabled for this product
-  window.addEventListener('DOMContentLoaded', async function() {
+  async function initTryOnButton() {
     const productId = '{{ product.id }}';
     const shop = '{{ shop.permanent_domain }}';
     const isThemeEditor = {{ request.design_mode | json }};
@@ -414,16 +414,6 @@
     if (isThemeEditor) {
       console.log('🎨 Theme editor mode - showing button');
       document.getElementById('try-on-wrapper-{{ block.id }}').style.display = 'block';
-      
-      // Send beacon to notify app that merchant is using theme editor
-      try {
-        fetch(`/apps/aboutthefit/editor-beacon?shop=${encodeURIComponent(shop)}`, {
-          method: 'POST',
-        }).catch(e => console.log('Beacon failed (non-critical):', e));
-      } catch (e) {
-        // Silent fail - this is just for analytics
-      }
-      
       return;
     }
     
@@ -461,10 +451,44 @@
     if (step2El) {
       window['loadingTemplate_{{ block.id }}'] = step2El.innerHTML;
     }
+  }
+  
+  // Initialize on page load
+  window.addEventListener('DOMContentLoaded', initTryOnButton);
+  
+  // Theme Editor Integration (Shopify best practices)
+  // Ref: https://shopify.dev/docs/storefronts/themes/best-practices/editor/integrate-sections-and-blocks
+  
+  // Handle block selection in theme editor
+  document.addEventListener('shopify:block:select', function(event) {
+    const blockId = '{{ block.id }}';
+    if (event.detail.blockId === blockId) {
+      console.log('🎯 Block selected in theme editor');
+      
+      // Ensure block is visible
+      const wrapper = document.getElementById('try-on-wrapper-{{ block.id }}');
+      if (wrapper) {
+        wrapper.style.display = 'block';
+        wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  });
+  
+  // Handle section reload (when section is re-rendered)
+  document.addEventListener('shopify:section:load', function(event) {
+    console.log('🔄 Section reloaded - reinitializing try-on button');
+    initTryOnButton();
   });
 
   // Open modal with animation
-  document.getElementById('try-on-btn-{{ block.id }}').addEventListener('click', function() {
+  document.getElementById('try-on-btn-{{ block.id }}').addEventListener('click', function(e) {
+    // Prevent modal from opening in theme editor
+    if (Shopify.designMode) {
+      console.log('🎨 Theme editor mode - click actions disabled');
+      e.preventDefault();
+      return;
+    }
+    
     const modal = document.getElementById('try-on-modal-{{ block.id }}');
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';

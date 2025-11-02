@@ -2,7 +2,7 @@
 
 ## Can We Check if the Theme Extension is Installed?
 
-**Short Answer:** Yes! We now detect theme editor activity in real-time. ✅
+**Short Answer:** Yes! We now use **server-side verification** to check if the block is actually installed. ✅
 
 ## What We CAN Check ✅
 
@@ -10,8 +10,8 @@
 2. **Active Subscriptions** - Check billing status via GraphQL
 3. **Theme List** - Get all themes in the shop
 4. **Products Enabled** - See which products have try-on enabled
-5. **🆕 Theme Editor Activity** - Detect when merchants open the theme customizer with our block
-6. **🆕 Real-time Status** - Show live indicators when editor is active
+5. **🆕 Block Installation** - SERVER-SIDE verification by reading theme JSON
+6. **🆕 Real-time Verification** - Checks actual theme files on every admin page load
 
 ## What We CANNOT Check ❌
 
@@ -31,30 +31,36 @@ This is a **Shopify platform limitation**, not an app limitation.
 
 ## Our Solution 🎯
 
-We've implemented a **beacon-based detection system** that works in real-time:
+We've implemented a **server-side verification system** that's 100% reliable:
 
-### Theme Editor Beacon (NEW! ⭐)
+### Server-Side Theme Verification (PRIMARY METHOD ⭐)
 
 **How it works:**
-1. Our Liquid block detects when it's loaded in theme editor mode (`request.design_mode`)
-2. It sends a "beacon" signal to our backend: `/apps/aboutthefit/editor-beacon`
-3. Backend stores the timestamp in `AppMetadata.settings.lastEditorActivity`
-4. Admin dashboard shows real-time status indicators
-
-**Status Indicators:**
-- 🟢 **Active** (green) - Editor opened within last 10 minutes
-- 🟡 **Recent** (yellow) - Editor opened within last 24 hours  
-- ⚪ **Never** - No editor activity detected
+1. On every admin page load, call Shopify Admin API
+2. Fetch the published theme ID
+3. Read product template JSON files (`templates/product.json`, `sections/main-product.json`)
+4. Parse JSON and search for our block type: `shopify://apps/about-the-fit/blocks/try_on_button`
+5. If found → `blockAddedToTheme = true`, otherwise `false`
 
 **Benefits:**
-- ✅ Real-time feedback to merchants
-- ✅ Confirms they're on the right path
-- ✅ Non-intrusive (silent beacon)
-- ✅ No privacy concerns
+- ✅ 100% reliable - reads actual theme files
+- ✅ Detects removal - if they remove the block, next check shows false
+- ✅ No client-side dependency - works even if JavaScript fails
+- ✅ Checks published theme - accurate to what customers see
+- ✅ No false positives - only true if block is actually there
+
+**Implemented in:**
+- `/app/services/theme-verification.server.ts` - Core verification logic
+- `/app/services/admin.server.ts` - Called on stats fetch
+- Runs on every admin dashboard load
+
+---
+
+## Additional Context
 
 ### Behavioral Detection
 
-We also use **smart behavioral detection**:
+The setup guide uses **smart behavioral detection**:
 
 ### Setup Guide Banner
 Shows automatically when:
@@ -127,71 +133,27 @@ This is available but not currently used in the UI since it doesn't provide the 
 
 If Shopify adds block placement detection to their GraphQL API in the future, we can enhance this!
 
-## Implementation Details
-
-### Backend Components
-
-**Beacon Endpoint:**
-```typescript
-/app/routes/api.proxy.editor-beacon.tsx
-```
-- Receives POST requests when block loads in theme editor
-- Stores timestamp in `AppMetadata.settings.lastEditorActivity`
-- Returns success/failure status
-
-**Stats Enhancement:**
-```typescript
-/app/services/admin.server.ts
-```
-- Updated `DashboardStats` interface with:
-  - `lastEditorActivity`: ISO timestamp
-  - `editorActivityStatus`: 'active' | 'recent' | 'never'
-- Calculates status based on time elapsed:
-  - Active: < 10 minutes
-  - Recent: < 24 hours
-  - Never: No activity or older
-
-### Frontend Components
-
-**Theme Block:**
-```liquid
-/extensions/about-the-fit/blocks/try_on_button.liquid
-```
-- Detects `request.design_mode`
-- Sends beacon on load: `fetch('/apps/aboutthefit/editor-beacon')`
-- Silent failure (non-critical)
-
-**Admin Dashboard:**
-```typescript
-/app/routes/app._index.tsx
-```
-- Shows setup guide banner when needed
-- Displays real-time status indicators:
-  - 🟢 Green badge for active editor
-  - 🟡 Yellow badge for recent activity
-  - No badge if never opened
-
 ## Testing
 
-**To test the beacon system:**
+**To test the verification system:**
 1. Enable a product for try-on in admin
 2. Go to **Online Store → Themes → Customize**
 3. Navigate to a product page
 4. Add the "About the Fit - Try It On" block
-5. Return to the app admin (refresh)
-6. You should see 🟢 "Theme editor is open!"
+5. **Save the theme**
+6. Return to the app admin (refresh)
+7. You should see Step 2 with a green checkmark ✅
 
 **Expected behavior:**
-- Status changes from "never" to "active" immediately
-- After 10 minutes of inactivity, changes to "recent" 
-- After 24 hours, no longer shows status
-- Banner disappears after first try-on is completed
+- Step 2 shows ✅ "Block added successfully!" when verified
+- If you remove the block and save, Step 2 will show instructions again
+- Verification runs on every admin dashboard load
+- No delays or false positives
 
 ## Related Files
 
-- `/app/routes/app._index.tsx` - Setup guide banner + status indicators
-- `/app/routes/api.proxy.editor-beacon.tsx` - Beacon receiver endpoint
-- `/app/routes/api.admin.extension-status.tsx` - API route (for future GraphQL use)
-- `/app/services/admin.server.ts` - Stats calculation + editor activity
-- `/extensions/about-the-fit/blocks/try_on_button.liquid` - The theme block (beacon sender)
+- `/app/routes/app._index.tsx` - Setup guide with progress indicators
+- `/app/services/theme-verification.server.ts` - Core server-side verification logic
+- `/app/services/admin.server.ts` - Stats calculation + verification integration
+- `/extensions/about-the-fit/blocks/try_on_button.liquid` - The theme block itself
 

@@ -28,7 +28,7 @@ api_version = "2025-10"
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 # read_products: Fetch product details and images for virtual try-on
 # Note: App billing (appSubscriptionCreate) doesn't require explicit scopes
-scopes = "read_products"
+scopes = "read_products,read_themes"
 
 [auth]
 redirect_urls = [ "https://www.aboutthefit.app/api/auth" ]

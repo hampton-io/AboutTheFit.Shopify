@@ -10,8 +10,11 @@
       }
     },
     "routeIdToServerBundleId": {
+      "routes/api.admin.extension-status": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.proxy.check-enabled": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.proxy.editor-beacon": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.proxy.tryon.create": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "routes/api.admin.debug-theme": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.billing.confirm": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.admin.products": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.billing.cancel": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -41,6 +44,15 @@
         "path": "",
         "config": {}
       },
+      "routes/api.admin.extension-status": {
+        "id": "routes/api.admin.extension-status",
+        "parentId": "root",
+        "file": "app/routes/api.admin.extension-status.tsx",
+        "path": "api/admin/extension-status",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
       "routes/api.proxy.check-enabled": {
         "id": "routes/api.proxy.check-enabled",
         "parentId": "root",
@@ -50,11 +62,29 @@
           "runtime": "nodejs"
         }
       },
+      "routes/api.proxy.editor-beacon": {
+        "id": "routes/api.proxy.editor-beacon",
+        "parentId": "root",
+        "file": "app/routes/api.proxy.editor-beacon.tsx",
+        "path": "api/proxy/editor-beacon",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
       "routes/api.proxy.tryon.create": {
         "id": "routes/api.proxy.tryon.create",
         "parentId": "root",
         "file": "app/routes/api.proxy.tryon.create.tsx",
         "path": "api/proxy/tryon/create",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "routes/api.admin.debug-theme": {
+        "id": "routes/api.admin.debug-theme",
+        "parentId": "root",
+        "file": "app/routes/api.admin.debug-theme.tsx",
+        "path": "api/admin/debug-theme",
         "config": {
           "runtime": "nodejs"
         }
@@ -270,17 +300,35 @@
         "file": "root.tsx",
         "path": ""
       },
+      "routes/api.admin.extension-status": {
+        "id": "routes/api.admin.extension-status",
+        "parentId": "root",
+        "file": "routes/api.admin.extension-status.tsx",
+        "path": "api/admin/extension-status"
+      },
       "routes/api.proxy.check-enabled": {
         "id": "routes/api.proxy.check-enabled",
         "parentId": "root",
         "file": "routes/api.proxy.check-enabled.tsx",
         "path": "api/proxy/check-enabled"
       },
+      "routes/api.proxy.editor-beacon": {
+        "id": "routes/api.proxy.editor-beacon",
+        "parentId": "root",
+        "file": "routes/api.proxy.editor-beacon.tsx",
+        "path": "api/proxy/editor-beacon"
+      },
       "routes/api.proxy.tryon.create": {
         "id": "routes/api.proxy.tryon.create",
         "parentId": "root",
         "file": "routes/api.proxy.tryon.create.tsx",
         "path": "api/proxy/tryon/create"
+      },
+      "routes/api.admin.debug-theme": {
+        "id": "routes/api.admin.debug-theme",
+        "parentId": "root",
+        "file": "routes/api.admin.debug-theme.tsx",
+        "path": "api/admin/debug-theme"
       },
       "routes/api.billing.confirm": {
         "id": "routes/api.billing.confirm",
@@ -429,14 +477,29 @@
         "file": "root.tsx",
         "children": [
           {
+            "id": "routes/api.admin.extension-status",
+            "file": "routes/api.admin.extension-status.tsx",
+            "path": "api/admin/extension-status"
+          },
+          {
             "id": "routes/api.proxy.check-enabled",
             "file": "routes/api.proxy.check-enabled.tsx",
             "path": "api/proxy/check-enabled"
           },
           {
+            "id": "routes/api.proxy.editor-beacon",
+            "file": "routes/api.proxy.editor-beacon.tsx",
+            "path": "api/proxy/editor-beacon"
+          },
+          {
             "id": "routes/api.proxy.tryon.create",
             "file": "routes/api.proxy.tryon.create.tsx",
             "path": "api/proxy/tryon/create"
+          },
+          {
+            "id": "routes/api.admin.debug-theme",
+            "file": "routes/api.admin.debug-theme.tsx",
+            "path": "api/admin/debug-theme"
           },
           {
             "id": "routes/api.billing.confirm",

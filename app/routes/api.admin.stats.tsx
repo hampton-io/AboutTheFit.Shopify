@@ -6,7 +6,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
 
   try {
-    const stats = await getDashboardStats(admin, session.shop);
+    const stats = await getDashboardStats(admin, session, session.shop);
 
     return Response.json({
       success: true,
