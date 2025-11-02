@@ -759,7 +759,7 @@ export default function Index() {
       {/* Setup Guide - Always show with skeleton */}
       <s-section slot="aside" heading={
         !stats ? "Loading..." :
-        stats.totalTryOns > 0 ? "All systems go! 🎉" : 
+        (stats.productsWithTryOn > 0 && stats.blockAddedToTheme && stats.totalTryOns > 0) ? "All systems go! 🎉" : 
         stats.productsWithTryOn === 0 ? "Getting Started" : 
         "Complete Your Setup"
       }>
@@ -786,7 +786,7 @@ export default function Index() {
           </s-stack>
         ) : (
           <s-stack direction="block" gap="base">
-            {stats.totalTryOns > 0 ? (
+            {(stats.productsWithTryOn > 0 && stats.blockAddedToTheme && stats.totalTryOns > 0) ? (
               <s-paragraph>
                 <strong>Everything is working.</strong> Your virtual try-on is live and customers can try on products before buying.
               </s-paragraph>
