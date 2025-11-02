@@ -231,8 +231,23 @@ export async function getDashboardStats(
   let metadata = await prisma.appMetadata.findUnique({
     where: { shop },
   });
-  console.log('[Stats] Metadata fetched in', Date.now() - startTime, 'ms');
+  console.log('[Stats] Metadata fetched in', Date.now() - startTime, 'ms, found:', !!metadata);
 
+  // Create metadata if it doesn't exist (fallback for missed auth flow)
+  if (!metadata) {
+    console.log('[Stats] ⚠️ Metadata missing! Creating now...');
+    metadata = await prisma.appMetadata.create({
+      data: {
+        shop,
+        creditsUsed: 0,
+        creditsLimit: 10, // Free tier: 10 try-ons per month
+        productLimit: 3,  // Free tier: 3 products max
+        isActive: true,
+      },
+    });
+    console.log('[Stats] ✅ Metadata created in', Date.now() - startTime, 'ms');
+  }
+  
   // Fix any existing metadata with invalid 0 limits (from old versions or bad data)
   if (metadata && (metadata.creditsLimit === 0 || metadata.productLimit === 0)) {
     metadata = await prisma.appMetadata.update({
