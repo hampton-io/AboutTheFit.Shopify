@@ -5,17 +5,13 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import prisma from "../db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  console.log('[Auth] OAuth callback received');
-  const startTime = Date.now();
-  
   try {
     const { session } = await authenticate.admin(request);
-    console.log('[Auth] Authentication completed in', Date.now() - startTime, 'ms for shop:', session.shop);
     
     // Create app metadata on first install/auth
     // This ensures stats page doesn't break on fresh installs
     try {
-      const result = await prisma.appMetadata.upsert({
+      await prisma.appMetadata.upsert({
         where: { shop: session.shop },
         create: {
           shop: session.shop,
@@ -29,18 +25,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           isActive: true,
         },
       });
-      console.log('[Auth] ✅ AppMetadata ensured for shop:', session.shop, 'in', Date.now() - startTime, 'ms');
-      console.log('[Auth] Metadata result:', result);
     } catch (error) {
-      console.error('[Auth] ❌ Failed to create metadata:', error);
-      console.error('[Auth] Error details:', error instanceof Error ? error.stack : error);
+      console.error('Failed to create metadata on auth:', error);
       // Don't fail auth if metadata creation fails
     }
 
-    console.log('[Auth] ✅ Auth flow completed in', Date.now() - startTime, 'ms');
     return null;
   } catch (error) {
-    console.error('[Auth] ❌ Authentication failed:', error);
+    console.error('Authentication failed:', error);
     throw error;
   }
 };

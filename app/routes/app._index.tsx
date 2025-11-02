@@ -131,29 +131,6 @@ export default function Index() {
     productsFetcher.load('/api/admin/products?first=50');
     statsFetcher.load('/api/admin/stats');
     billingFetcher.load('/api/billing/status');
-    
-    // Safety timeout - force loading to stop after 10 seconds
-    const timeout = setTimeout(() => {
-      if (isLoading) {
-        console.error('Loading timeout - forcing stop');
-        setIsLoading(false);
-        if (!stats) {
-          setStats({
-            totalProducts: 0,
-            productsWithTryOn: 0,
-            totalTryOns: 0,
-            creditsUsed: 0,
-            creditsRemaining: 0,
-            creditsLimit: 0,
-            productLimit: 0,
-            daysUntilReset: 0,
-            blockAddedToTheme: false,
-          });
-        }
-      }
-    }, 10000);
-    
-    return () => clearTimeout(timeout);
   }, []);
 
   // Update products when fetcher returns
@@ -171,16 +148,12 @@ export default function Index() {
 
   // Update stats when fetcher returns
   useEffect(() => {
-    console.log('[Client Stats] Fetcher state:', statsFetcher.state);
-    console.log('[Client Stats] Fetcher data:', statsFetcher.data);
-    
     if (statsFetcher.data?.success) {
-      console.log('[Client Stats] ✅ Stats loaded successfully');
       setStats(statsFetcher.data.stats);
       setIsLoading(false);
     } else if (statsFetcher.data && !statsFetcher.data.success) {
       // Handle error case - show default stats to prevent infinite loading
-      console.error('[Client Stats] ❌ Failed to load stats:', statsFetcher.data);
+      console.error('Failed to load stats:', statsFetcher.data);
       setStats({
         totalProducts: 0,
         productsWithTryOn: 0,
@@ -193,10 +166,6 @@ export default function Index() {
         blockAddedToTheme: false,
       });
       setIsLoading(false);
-    } else if (statsFetcher.state === 'idle' && !statsFetcher.data) {
-      console.log('[Client Stats] ⏸️ Fetcher is idle but no data yet');
-    } else if (statsFetcher.state === 'loading') {
-      console.log('[Client Stats] ⏳ Loading stats...');
     }
   }, [statsFetcher.data, statsFetcher.state]);
 
