@@ -591,7 +591,7 @@ export default function Index() {
         </s-section>
       )}
 
-      {stats && stats.productLimit !== -1 && stats.productsWithTryOn >= stats.productLimit && (
+      {stats && stats.productLimit !== -1 && stats.productsWithTryOn > 0 && stats.productsWithTryOn >= stats.productLimit && (
         <s-section>
           <div style={{ 
             backgroundColor: '#ffeaea', 

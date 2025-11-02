@@ -221,9 +221,20 @@ export async function getDashboardStats(
   });
 
   // Get metadata and calculate limits
-  const metadata = await prisma.appMetadata.findUnique({
+  let metadata = await prisma.appMetadata.findUnique({
     where: { shop },
   });
+
+  // Fix any existing metadata with invalid 0 limits (from old versions or bad data)
+  if (metadata && (metadata.creditsLimit === 0 || metadata.productLimit === 0)) {
+    metadata = await prisma.appMetadata.update({
+      where: { shop },
+      data: {
+        creditsLimit: metadata.creditsLimit === 0 ? 10 : metadata.creditsLimit,
+        productLimit: metadata.productLimit === 0 ? 3 : metadata.productLimit,
+      },
+    });
+  }
 
   const creditsUsed = metadata?.creditsUsed || 0;
   const creditsLimit = metadata?.creditsLimit || 10;
@@ -237,7 +248,15 @@ export async function getDashboardStats(
 
   // SERVER-SIDE VERIFICATION: Check if block is actually installed in theme
   // This is much more reliable than client-side beacons!
-  const blockAddedToTheme = await verifyBlockInstalled(session, shop);
+  // TEMPORARILY DISABLED until read_themes scope is granted
+  let blockAddedToTheme = false;
+  try {
+    blockAddedToTheme = await verifyBlockInstalled(session, shop);
+  } catch (error) {
+    console.error('Theme verification failed (missing read_themes scope?):', error);
+    // Fallback to false - theme verification will work after scope is granted
+    blockAddedToTheme = false;
+  }
   
   // Store the result for faster subsequent checks (optional optimization)
   if (blockAddedToTheme && metadata) {

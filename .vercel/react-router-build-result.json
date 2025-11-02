@@ -12,7 +12,6 @@
     "routeIdToServerBundleId": {
       "routes/api.admin.extension-status": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.proxy.check-enabled": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
-      "routes/api.proxy.editor-beacon": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.proxy.tryon.create": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.admin.debug-theme": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "routes/api.billing.confirm": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -58,15 +57,6 @@
         "parentId": "root",
         "file": "app/routes/api.proxy.check-enabled.tsx",
         "path": "api/proxy/check-enabled",
-        "config": {
-          "runtime": "nodejs"
-        }
-      },
-      "routes/api.proxy.editor-beacon": {
-        "id": "routes/api.proxy.editor-beacon",
-        "parentId": "root",
-        "file": "app/routes/api.proxy.editor-beacon.tsx",
-        "path": "api/proxy/editor-beacon",
         "config": {
           "runtime": "nodejs"
         }
@@ -312,12 +302,6 @@
         "file": "routes/api.proxy.check-enabled.tsx",
         "path": "api/proxy/check-enabled"
       },
-      "routes/api.proxy.editor-beacon": {
-        "id": "routes/api.proxy.editor-beacon",
-        "parentId": "root",
-        "file": "routes/api.proxy.editor-beacon.tsx",
-        "path": "api/proxy/editor-beacon"
-      },
       "routes/api.proxy.tryon.create": {
         "id": "routes/api.proxy.tryon.create",
         "parentId": "root",
@@ -485,11 +469,6 @@
             "id": "routes/api.proxy.check-enabled",
             "file": "routes/api.proxy.check-enabled.tsx",
             "path": "api/proxy/check-enabled"
-          },
-          {
-            "id": "routes/api.proxy.editor-beacon",
-            "file": "routes/api.proxy.editor-beacon.tsx",
-            "path": "api/proxy/editor-beacon"
           },
           {
             "id": "routes/api.proxy.tryon.create",

@@ -207,7 +207,8 @@ export async function getOrCreateAppMetadata(shop: string) {
       data: {
         shop,
         creditsUsed: 0,
-        creditsLimit: 10, // Free tier: 10 try-ons
+        creditsLimit: 10, // Free tier: 10 try-ons per month
+        productLimit: 3,  // Free tier: 3 products max
         isActive: true,
       },
     });
