@@ -198,13 +198,18 @@ export async function getDashboardStats(
   session: Session,
   shop: string
 ): Promise<DashboardStats> {
+  const startTime = Date.now();
+  console.log('[Stats] Starting getDashboardStats for', shop);
+  
   const { checkAndResetMonthlyLimits } = await import('./billing.server');
   
   // Check and reset monthly limits if needed
   await checkAndResetMonthlyLimits(shop);
+  console.log('[Stats] Monthly limits checked in', Date.now() - startTime, 'ms');
 
   // Get total products from Shopify
   const { products } = await searchProducts(admin, { first: 1 });
+  console.log('[Stats] Products fetched in', Date.now() - startTime, 'ms');
   // Note: This is a simplified count, in production you'd use a dedicated count query
 
   // Get products with try-on enabled
@@ -214,16 +219,19 @@ export async function getDashboardStats(
       tryOnEnabled: true,
     },
   });
+  console.log('[Stats] ProductTryOnSettings counted in', Date.now() - startTime, 'ms');
 
   // Get total try-ons
   const totalTryOns = await prisma.tryOnRequest.count({
     where: { shop },
   });
+  console.log('[Stats] TryOnRequests counted in', Date.now() - startTime, 'ms');
 
   // Get metadata and calculate limits
   let metadata = await prisma.appMetadata.findUnique({
     where: { shop },
   });
+  console.log('[Stats] Metadata fetched in', Date.now() - startTime, 'ms');
 
   // Fix any existing metadata with invalid 0 limits (from old versions or bad data)
   if (metadata && (metadata.creditsLimit === 0 || metadata.productLimit === 0)) {
@@ -234,6 +242,7 @@ export async function getDashboardStats(
         productLimit: metadata.productLimit === 0 ? 3 : metadata.productLimit,
       },
     });
+    console.log('[Stats] Metadata fixed in', Date.now() - startTime, 'ms');
   }
 
   const creditsUsed = metadata?.creditsUsed || 0;
@@ -248,13 +257,20 @@ export async function getDashboardStats(
 
   // SERVER-SIDE VERIFICATION: Check if block is actually installed in theme
   // This is much more reliable than client-side beacons!
-  // TEMPORARILY DISABLED until read_themes scope is granted
+  console.log('[Stats] Starting theme verification at', Date.now() - startTime, 'ms');
   let blockAddedToTheme = false;
   try {
-    blockAddedToTheme = await verifyBlockInstalled(session, shop);
+    // Add a 5-second timeout to prevent hanging
+    const verificationPromise = verifyBlockInstalled(session, shop);
+    const timeoutPromise = new Promise<boolean>((resolve) => 
+      setTimeout(() => resolve(false), 5000)
+    );
+    
+    blockAddedToTheme = await Promise.race([verificationPromise, timeoutPromise]);
+    console.log('[Stats] Theme verification completed in', Date.now() - startTime, 'ms, result:', blockAddedToTheme);
   } catch (error) {
-    console.error('Theme verification failed (missing read_themes scope?):', error);
-    // Fallback to false - theme verification will work after scope is granted
+    console.error('Theme verification failed:', error);
+    // Fallback to false - non-critical feature
     blockAddedToTheme = false;
   }
   
@@ -281,6 +297,8 @@ export async function getDashboardStats(
     }
   }
 
+  console.log('[Stats] ✅ getDashboardStats completed in', Date.now() - startTime, 'ms');
+  
   return {
     totalProducts: products.length, // This is simplified, should be actual count
     productsWithTryOn,
