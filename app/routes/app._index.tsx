@@ -171,12 +171,16 @@ export default function Index() {
 
   // Update stats when fetcher returns
   useEffect(() => {
+    console.log('[Client Stats] Fetcher state:', statsFetcher.state);
+    console.log('[Client Stats] Fetcher data:', statsFetcher.data);
+    
     if (statsFetcher.data?.success) {
+      console.log('[Client Stats] ✅ Stats loaded successfully');
       setStats(statsFetcher.data.stats);
       setIsLoading(false);
     } else if (statsFetcher.data && !statsFetcher.data.success) {
       // Handle error case - show default stats to prevent infinite loading
-      console.error('Failed to load stats:', statsFetcher.data);
+      console.error('[Client Stats] ❌ Failed to load stats:', statsFetcher.data);
       setStats({
         totalProducts: 0,
         productsWithTryOn: 0,
@@ -189,8 +193,12 @@ export default function Index() {
         blockAddedToTheme: false,
       });
       setIsLoading(false);
+    } else if (statsFetcher.state === 'idle' && !statsFetcher.data) {
+      console.log('[Client Stats] ⏸️ Fetcher is idle but no data yet');
+    } else if (statsFetcher.state === 'loading') {
+      console.log('[Client Stats] ⏳ Loading stats...');
     }
-  }, [statsFetcher.data]);
+  }, [statsFetcher.data, statsFetcher.state]);
 
   // Update subscription when fetcher returns
   useEffect(() => {
