@@ -131,12 +131,40 @@ export default function Index() {
     productsFetcher.load('/api/admin/products?first=50');
     statsFetcher.load('/api/admin/stats');
     billingFetcher.load('/api/billing/status');
+    
+    // Safety timeout - force loading to stop after 10 seconds
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.error('Loading timeout - forcing stop');
+        setIsLoading(false);
+        if (!stats) {
+          setStats({
+            totalProducts: 0,
+            productsWithTryOn: 0,
+            totalTryOns: 0,
+            creditsUsed: 0,
+            creditsRemaining: 0,
+            creditsLimit: 0,
+            productLimit: 0,
+            daysUntilReset: 0,
+            blockAddedToTheme: false,
+          });
+        }
+      }
+    }, 10000);
+    
+    return () => clearTimeout(timeout);
   }, []);
 
   // Update products when fetcher returns
   useEffect(() => {
     if (productsFetcher.data?.success) {
       setProducts(productsFetcher.data.products || []);
+      setIsLoading(false);
+    } else if (productsFetcher.data && !productsFetcher.data.success) {
+      // Handle error case
+      console.error('Failed to load products:', productsFetcher.data);
+      setProducts([]);
       setIsLoading(false);
     }
   }, [productsFetcher.data]);
@@ -145,6 +173,21 @@ export default function Index() {
   useEffect(() => {
     if (statsFetcher.data?.success) {
       setStats(statsFetcher.data.stats);
+      setIsLoading(false);
+    } else if (statsFetcher.data && !statsFetcher.data.success) {
+      // Handle error case - show default stats to prevent infinite loading
+      console.error('Failed to load stats:', statsFetcher.data);
+      setStats({
+        totalProducts: 0,
+        productsWithTryOn: 0,
+        totalTryOns: 0,
+        creditsUsed: 0,
+        creditsRemaining: 0,
+        creditsLimit: 0,
+        productLimit: 0,
+        daysUntilReset: 0,
+        blockAddedToTheme: false,
+      });
       setIsLoading(false);
     }
   }, [statsFetcher.data]);
