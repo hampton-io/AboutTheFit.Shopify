@@ -414,6 +414,16 @@
     if (isThemeEditor) {
       console.log('🎨 Theme editor mode - showing button');
       document.getElementById('try-on-wrapper-{{ block.id }}').style.display = 'block';
+      
+      // Send beacon to notify app that merchant is using theme editor
+      try {
+        fetch(`/apps/aboutthefit/editor-beacon?shop=${encodeURIComponent(shop)}`, {
+          method: 'POST',
+        }).catch(e => console.log('Beacon failed (non-critical):', e));
+      } catch (e) {
+        // Silent fail - this is just for analytics
+      }
+      
       return;
     }
     

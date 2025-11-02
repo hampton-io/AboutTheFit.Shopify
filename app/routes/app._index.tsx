@@ -240,6 +240,93 @@ export default function Index() {
 
   return (
     <s-page heading="About the Fit - Virtual Try-On">
+      {/* Setup Guide Banner - Only show if no try-ons have been done yet */}
+      {stats && stats.totalTryOns === 0 && stats.productsWithTryOn > 0 && (
+        <s-section>
+          <s-box padding="base" borderWidth="base" borderRadius="base" tone="info">
+            <s-stack direction="block" gap="base">
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <div style={{ fontSize: '20px' }}>ℹ️</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>
+                    Complete Your Setup
+                  </div>
+                  
+                  {/* Editor Activity Status */}
+                  {stats.editorActivityStatus === 'active' && (
+                    <div style={{ 
+                      marginBottom: '12px', 
+                      padding: '8px 12px', 
+                      backgroundColor: '#D1FAE5', 
+                      borderRadius: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <span style={{ fontSize: '16px' }}>🟢</span>
+                      <s-text tone="success">
+                        <strong>Theme editor is open!</strong> You're currently customizing your theme
+                      </s-text>
+                    </div>
+                  )}
+                  
+                  {stats.editorActivityStatus === 'recent' && (
+                    <div style={{ 
+                      marginBottom: '12px', 
+                      padding: '8px 12px', 
+                      backgroundColor: '#FEF3C7', 
+                      borderRadius: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <span style={{ fontSize: '16px' }}>🟡</span>
+                      <s-text>
+                        <strong>Recently opened:</strong> We detected the theme editor was opened in the last 24 hours
+                      </s-text>
+                    </div>
+                  )}
+                  
+                  <s-text>
+                    You've enabled {stats.productsWithTryOn} {stats.productsWithTryOn === 1 ? 'product' : 'products'}, but we haven't seen any try-ons yet.
+                  </s-text>
+                  <div style={{ marginTop: '12px' }}>
+                    <s-text tone="emphasis">
+                      <strong>Next Step:</strong> Add the "Try It On" button to your theme
+                    </s-text>
+                  </div>
+                  <ol style={{ marginTop: '12px', marginLeft: '20px', lineHeight: '1.8' }}>
+                    <li>
+                      <s-text>Go to <strong>Online Store → Themes</strong> in your Shopify admin</s-text>
+                    </li>
+                    <li>
+                      <s-text>Click <strong>Customize</strong> on your active theme</s-text>
+                    </li>
+                    <li>
+                      <s-text>Navigate to a <strong>Product page</strong></s-text>
+                    </li>
+                    <li>
+                      <s-text>Click <strong>Add block</strong> and search for <strong>"About the Fit - Try It On"</strong></s-text>
+                    </li>
+                    <li>
+                      <s-text>Position the block where you want the button to appear</s-text>
+                    </li>
+                    <li>
+                      <s-text>Click <strong>Save</strong></s-text>
+                    </li>
+                  </ol>
+                  <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#FFF9E6', borderRadius: '8px' }}>
+                    <s-text tone="warning">
+                      💡 <strong>Tip:</strong> The button will only appear on products you've enabled below. Make sure to test with an enabled product!
+                    </s-text>
+                  </div>
+                </div>
+              </div>
+            </s-stack>
+          </s-box>
+        </s-section>
+      )}
+
       {/* Stats Cards */}
       {stats && (
         <s-section>

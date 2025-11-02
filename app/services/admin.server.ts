@@ -20,6 +20,8 @@ export interface DashboardStats {
   creditsLimit: number;
   productLimit: number;
   daysUntilReset: number;
+  lastEditorActivity?: string; // ISO timestamp of last theme editor activity
+  editorActivityStatus?: 'active' | 'recent' | 'never'; // Helper status for UI
 }
 
 /**
@@ -232,6 +234,24 @@ export async function getDashboardStats(
   const daysSinceReset = Math.floor((now.getTime() - lastResetDate.getTime()) / (1000 * 60 * 60 * 24));
   const daysUntilReset = Math.max(0, 30 - daysSinceReset);
 
+  // Get last editor activity from settings
+  const lastEditorActivity = metadata?.settings && typeof metadata.settings === 'object' 
+    ? (metadata.settings as any).lastEditorActivity 
+    : undefined;
+
+  // Calculate editor activity status
+  let editorActivityStatus: 'active' | 'recent' | 'never' = 'never';
+  if (lastEditorActivity) {
+    const activityDate = new Date(lastEditorActivity);
+    const minutesSinceActivity = Math.floor((now.getTime() - activityDate.getTime()) / (1000 * 60));
+    
+    if (minutesSinceActivity < 10) {
+      editorActivityStatus = 'active'; // Within last 10 minutes
+    } else if (minutesSinceActivity < 60 * 24) {
+      editorActivityStatus = 'recent'; // Within last 24 hours
+    }
+  }
+
   return {
     totalProducts: products.length, // This is simplified, should be actual count
     productsWithTryOn,
@@ -241,6 +261,8 @@ export async function getDashboardStats(
     creditsLimit,
     productLimit,
     daysUntilReset,
+    lastEditorActivity,
+    editorActivityStatus,
   };
 }
 
