@@ -800,7 +800,7 @@ export default function Index() {
               </s-paragraph>
             )}
             
-            {loaderData?.setupGuideVideoUrl && stats.totalTryOns === 0 && (
+            {loaderData?.setupGuideVideoUrl && !(stats.productsWithTryOn > 0 && stats.blockAddedToTheme && stats.totalTryOns > 0) && (
               <div style={{ marginBottom: '12px' }}>
                 <a 
                   href={loaderData.setupGuideVideoUrl}
